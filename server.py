@@ -3,8 +3,12 @@
 Entry point: run with `uv run server.py`
 """
 
-from mcp.server.fastmcp import FastMCP
+import logging
+from contextlib import asynccontextmanager
 
+from mcp.server.fastmcp import Context, FastMCP
+
+from skb import store
 from skb.tools import (
     tool_sync_skb,
     tool_search_docs,
@@ -12,7 +16,18 @@ from skb.tools import (
     tool_list_projects,
     tool_list_documents,
     tool_remove_project,
+    tool_reindex_project,
 )
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+
+
+@asynccontextmanager
+async def lifespan(server: FastMCP):
+    """Warm up the ChromaDB embedding model at server startup."""
+    store.warm_up()
+    yield
+
 
 mcp = FastMCP(
     "skb",
@@ -21,18 +36,20 @@ mcp = FastMCP(
         "Each project may have a .skb/ folder with context documents. "
         "Use sync_skb to index them, then search_docs/search_code to query."
     ),
+    lifespan=lifespan,
 )
 
 
 @mcp.tool()
-def sync_skb(project_dir: str = "") -> dict:
+async def sync_skb(project_dir: str = "", ctx: Context | None = None) -> dict:
     """Scan the .skb/ folder in the project directory and ingest/update all files.
 
     Call this at the start of a session or after adding new files to .skb/.
     Input: project_dir (str, optional — defaults to current working directory).
     Output: {project, files_added, files_updated, files_removed, total_chunks}
     """
-    return tool_sync_skb(project_dir)
+    progress_callback = ctx.report_progress if ctx else None
+    return await tool_sync_skb(project_dir, progress_callback=progress_callback)
 
 
 @mcp.tool()
@@ -106,6 +123,26 @@ def remove_project(project: str) -> dict:
     Input: project (str) — name of the project to remove
     """
     return tool_remove_project(project)
+
+
+@mcp.tool()
+async def reindex_project(
+    project: str = "",
+    project_dir: str = "",
+    ctx: Context | None = None,
+) -> dict:
+    """Force a full reindex: delete all indexed data for a project and rebuild from scratch.
+
+    Use when the index is corrupted, embeddings need regenerating, or you want
+    a clean slate without manually removing and re-syncing.
+
+    Input:
+      - project (str, optional): project name — used to look up the directory from stored metadata
+      - project_dir (str, optional): explicit path to project root — takes precedence over project name
+      - If both are empty, defaults to the current working directory
+    """
+    progress_callback = ctx.report_progress if ctx else None
+    return await tool_reindex_project(project, project_dir, progress_callback=progress_callback)
 
 
 if __name__ == "__main__":

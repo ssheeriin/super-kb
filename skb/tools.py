@@ -1,9 +1,11 @@
 """MCP tool definitions for the SKB server."""
 
+from collections.abc import Callable
 from pathlib import Path
 
-from .sync import sync_skb_folder
+from .sync import sync_skb_folder, reindex_project
 from .store import (
+    get_project_dir,
     query_collection,
     query_multiple_collections,
     list_collections,
@@ -12,15 +14,19 @@ from .store import (
 )
 
 
-def tool_sync_skb(project_dir: str = "") -> dict:
+async def tool_sync_skb(
+    project_dir: str = "",
+    progress_callback: Callable | None = None,
+) -> dict:
     """Scan the .skb/ folder in the project directory and ingest/update all files.
 
     Args:
         project_dir: Path to the project root. Defaults to current working directory.
+        progress_callback: Optional async callable(current, total) for progress reporting.
     """
     if not project_dir:
         project_dir = str(Path.cwd())
-    return sync_skb_folder(project_dir)
+    return await sync_skb_folder(project_dir, progress_callback=progress_callback)
 
 
 def tool_search_docs(
@@ -116,3 +122,27 @@ def tool_remove_project(project: str) -> dict:
         "removed": existed,
         "message": f"Project '{project}' removed." if existed else f"Project '{project}' not found.",
     }
+
+
+async def tool_reindex_project(
+    project: str = "",
+    project_dir: str = "",
+    progress_callback: Callable | None = None,
+) -> dict:
+    """Force a full reindex: delete all indexed data and rebuild from scratch.
+
+    Args:
+        project: Project name. Used to look up the project directory if project_dir is empty.
+        project_dir: Path to the project root. Defaults to current working directory.
+        progress_callback: Optional async callable(current, total) for progress reporting.
+    """
+    if not project_dir:
+        if project:
+            resolved = get_project_dir(project)
+            if not resolved:
+                return {"error": f"Could not resolve directory for project '{project}'. Index it first with sync_skb."}
+            project_dir = resolved
+        else:
+            project_dir = str(Path.cwd())
+
+    return await reindex_project(project_dir, progress_callback=progress_callback)

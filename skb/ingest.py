@@ -1,12 +1,15 @@
 """Document processing pipeline — read file, detect type, chunk, attach metadata, upsert."""
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .config import EXTENSION_MAP, LANGUAGE_MAP
+from .config import EXTENSION_MAP, LANGUAGE_MAP, MAX_CONTENT_CHARS, MAX_PDF_PAGES
 from .chunkers import chunk_document
 from .store import add_documents
+
+logger = logging.getLogger(__name__)
 
 
 def ingest_file(
@@ -27,6 +30,14 @@ def ingest_file(
     content = _extract_content(file_path, doc_type)
     if not content or not content.strip():
         return 0
+
+    # Cap content size to prevent OOM during chunking/embedding
+    if len(content) > MAX_CONTENT_CHARS:
+        logger.warning(
+            "File %s has %d chars, truncating to %d",
+            file_path, len(content), MAX_CONTENT_CHARS,
+        )
+        content = content[:MAX_CONTENT_CHARS]
 
     # Relative path within project (relative to .skb/ parent)
     relative_path = str(file_path.relative_to(skb_dir.parent))
@@ -91,7 +102,13 @@ def _extract_pdf(file_path: Path) -> str:
         from pypdf import PdfReader
         reader = PdfReader(str(file_path))
         pages = []
-        for page in reader.pages:
+        for i, page in enumerate(reader.pages):
+            if i >= MAX_PDF_PAGES:
+                logger.warning(
+                    "PDF %s has %d pages, stopping at %d",
+                    file_path, len(reader.pages), MAX_PDF_PAGES,
+                )
+                break
             text = page.extract_text()
             if text:
                 pages.append(text)

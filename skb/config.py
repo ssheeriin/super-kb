@@ -1,10 +1,11 @@
 """Configuration constants for the SKB MCP server."""
 
+import os
 from pathlib import Path
 
 # ── Paths ───────────────────────────────────────────────────────────────────
-SKB_ROOT = Path(__file__).resolve().parent.parent  # ~/temp/skb/
-CHROMADB_DIR = SKB_ROOT / "chromadb"
+SKB_HOME = Path(os.environ.get("SKB_HOME", Path.home() / ".skb"))
+CHROMADB_DIR = SKB_HOME / "chromadb"
 
 # ── .skb/ folder name ──────────────────────────────────────────────────────
 SKB_FOLDER = ".skb"
@@ -35,6 +36,10 @@ LANGUAGE_MAP: dict[str, str] = {
     ".go": "go",
     ".rs": "rust",
 }
+
+# ── Safety limits ────────────────────────────────────────────────────────
+MAX_PDF_PAGES = 200
+MAX_CONTENT_CHARS = 500_000
 
 # ── Chunking parameters ──────────────────────────────────────────────────
 CHUNK_SIZES: dict[str, int] = {

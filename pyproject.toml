@@ -1,7 +1,7 @@
 [project]
 name = "skb-mcp-server"
 version = "0.1.0"
-description = "Shared Knowledge Base MCP server for Claude Code"
+description = "Super Knowledge Base MCP server for Claude Code"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "mcp[cli]>=1.26",

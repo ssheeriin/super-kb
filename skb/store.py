@@ -1,9 +1,13 @@
 """ChromaDB wrapper — create/get collections, add, query, delete, list."""
 
+import logging
+
 import chromadb
 from chromadb.config import Settings
 
 from .config import CHROMADB_DIR
+
+logger = logging.getLogger(__name__)
 
 # Module-level client (lazy init)
 _client: chromadb.ClientAPI | None = None
@@ -152,6 +156,50 @@ def list_documents_in_collection(project: str) -> list[dict]:
             }
         sources[src]["chunk_count"] += 1
     return list(sources.values())
+
+
+def get_project_dir(project: str) -> str | None:
+    """Derive the project directory from stored chunk metadata.
+
+    Returns the absolute project directory path, or None if the collection
+    is empty or the path cannot be determined.
+    """
+    collection = get_or_create_collection(project)
+    if collection.count() == 0:
+        return None
+
+    sample = collection.peek(limit=1)
+    if not sample["metadatas"]:
+        return None
+
+    meta = sample["metadatas"][0]
+    source_abs = meta.get("source_abs", "")
+    source = meta.get("source", "")
+
+    if not source_abs or not source:
+        return None
+
+    # project_dir = source_abs minus the relative source suffix
+    if source_abs.endswith(source):
+        project_dir = source_abs[: -len(source)].rstrip("/")
+        return project_dir
+
+    return None
+
+
+def warm_up() -> None:
+    """Trigger ChromaDB's lazy ONNX embedding model load.
+
+    Creates a temporary collection, upserts a dummy document (which forces
+    the embedding model to load), then deletes the collection.
+    """
+    logger.info("Warming up ChromaDB embedding model...")
+    client = _get_client()
+    tmp_name = "skb-warmup-tmp"
+    col = client.get_or_create_collection(name=tmp_name)
+    col.upsert(ids=["warmup"], documents=["warmup"])
+    client.delete_collection(name=tmp_name)
+    logger.info("ChromaDB embedding model ready.")
 
 
 def _sanitize_collection_name(name: str) -> str:
