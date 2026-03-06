@@ -7,6 +7,7 @@ dependencies = [
     "mcp[cli]>=1.26",
     "chromadb>=1.0",
     "pypdf>=5.0",
+    "flashrank>=0.2.10",
 ]
 
 [build-system]

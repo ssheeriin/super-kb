@@ -30,6 +30,11 @@ def _recursive_split(text: str, chunk_size: int, overlap: int) -> list[str]:
         return [text]
 
     separators = ["\n\n", "\n", ". ", " "]
+    # Minimum forward progress per iteration to prevent micro-chunk crawl.
+    # Without this, overlap can cause start to barely advance when a separator
+    # is found near the beginning of the chunk window, producing hundreds of
+    # nearly-identical chunks (e.g., when a long URL sits before a \n\n).
+    min_advance = max(chunk_size // 2, 1)
     chunks = []
     start = 0
 
@@ -40,14 +45,21 @@ def _recursive_split(text: str, chunk_size: int, overlap: int) -> list[str]:
             chunks.append(text[start:])
             break
 
-        split_at = end
+        # Find the best separator to split at
+        split_at = None
         for sep in separators:
             pos = text.rfind(sep, start, end)
             if pos > start:
                 split_at = pos + len(sep)
                 break
 
-        chunks.append(text[start:split_at])
-        start = max(start + 1, split_at - overlap)
+        if split_at is not None:
+            chunks.append(text[start:split_at])
+            # Apply overlap but guarantee meaningful forward progress
+            start = max(start + min_advance, split_at - overlap)
+        else:
+            # No separator found — hard split, no overlap
+            chunks.append(text[start:end])
+            start = end
 
     return chunks

@@ -5,7 +5,8 @@ import logging
 import chromadb
 from chromadb.config import Settings
 
-from .config import CHROMADB_DIR
+from .config import CHROMADB_DIR, RERANK_ENABLED, RERANK_RETRIEVAL_MULTIPLIER
+from .reranker import rerank as rerank_results
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,11 @@ def query_collection(
     if collection.count() == 0:
         return []
 
+    fetch_n = n_results * RERANK_RETRIEVAL_MULTIPLIER if RERANK_ENABLED else n_results
+
     kwargs: dict = {
         "query_texts": [query_text],
-        "n_results": min(n_results, collection.count()),
+        "n_results": min(fetch_n, collection.count()),
     }
     if where:
         kwargs["where"] = where
@@ -78,7 +81,7 @@ def query_collection(
             "section": meta.get("section", ""),
             "language": meta.get("language"),
         })
-    return out
+    return rerank_results(query_text, out, n_results)
 
 
 def query_multiple_collections(

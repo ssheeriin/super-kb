@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,6 +11,12 @@ from .chunkers import chunk_document
 from .store import add_documents
 
 logger = logging.getLogger(__name__)
+
+# Matches web-saved PDF footers: timestamp + title line, then URL + page number line
+_PDF_FOOTER_RE = re.compile(
+    r"\d{1,2}/\d{1,2}/\d{2,4},\s*\d{1,2}:\d{2}\s*[AP]M\s+[^\n]+\n"
+    r"https?://\S+\s+\d+/\d+",
+)
 
 
 def ingest_file(
@@ -111,6 +118,7 @@ def _extract_pdf(file_path: Path) -> str:
                 break
             text = page.extract_text()
             if text:
+                text = _PDF_FOOTER_RE.sub("", text)
                 pages.append(text)
         return "\n\n".join(pages)
     except Exception as e:

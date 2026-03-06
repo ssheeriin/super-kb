@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import unquote
 
 from .sync import sync_skb_folder, reindex_project
 from .store import (
@@ -14,26 +15,43 @@ from .store import (
 )
 
 
+async def _resolve_project_dir_from_ctx(ctx) -> str | None:
+    """Resolve the client's working directory from MCP roots."""
+    if ctx is None:
+        return None
+    try:
+        roots_result = await ctx.session.list_roots()
+        if roots_result.roots:
+            return unquote(str(roots_result.roots[0].uri.path))
+    except Exception:
+        pass
+    return None
+
+
 async def tool_sync_skb(
     project_dir: str = "",
     progress_callback: Callable | None = None,
+    ctx=None,
 ) -> dict:
     """Scan the .skb/ folder in the project directory and ingest/update all files.
 
     Args:
         project_dir: Path to the project root. Defaults to current working directory.
         progress_callback: Optional async callable(current, total) for progress reporting.
+        ctx: MCP context for resolving client working directory.
     """
     if not project_dir:
-        project_dir = str(Path.cwd())
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project_dir = resolved or str(Path.cwd())
     return await sync_skb_folder(project_dir, progress_callback=progress_callback)
 
 
-def tool_search_docs(
+async def tool_search_docs(
     query: str,
     n_results: int = 5,
     project: str = "",
     search_all_projects: bool = False,
+    ctx=None,
 ) -> dict:
     """Search the project knowledge base for relevant documentation.
 
@@ -42,12 +60,14 @@ def tool_search_docs(
         n_results: Number of results to return (default 5).
         project: Project name to search in. Defaults to current project.
         search_all_projects: If True, search across all indexed projects.
+        ctx: MCP context for resolving client working directory.
     """
     if search_all_projects:
         results = query_multiple_collections(query, n_results)
     else:
         if not project:
-            project = Path.cwd().name
+            resolved = await _resolve_project_dir_from_ctx(ctx)
+            project = Path(resolved).name if resolved else Path.cwd().name
         results = query_collection(project, query, n_results)
 
     return {
@@ -58,10 +78,11 @@ def tool_search_docs(
     }
 
 
-def tool_search_code(
+async def tool_search_code(
     query: str,
     language: str = "",
     n_results: int = 5,
+    ctx=None,
 ) -> dict:
     """Search the knowledge base for code examples and reference implementations.
 
@@ -69,8 +90,10 @@ def tool_search_code(
         query: Semantic search query about code.
         language: Optional language filter (e.g., "python", "typescript").
         n_results: Number of results to return (default 5).
+        ctx: MCP context for resolving client working directory.
     """
-    project = Path.cwd().name
+    resolved = await _resolve_project_dir_from_ctx(ctx)
+    project = Path(resolved).name if resolved else Path.cwd().name
     where = {"doc_type": "code"}
     if language:
         where = {"$and": [{"doc_type": "code"}, {"language": language}]}
@@ -94,14 +117,16 @@ def tool_list_projects() -> dict:
     }
 
 
-def tool_list_documents(project: str = "") -> dict:
+async def tool_list_documents(project: str = "", ctx=None) -> dict:
     """List all indexed files for a project with metadata.
 
     Args:
         project: Project name. Defaults to current project.
+        ctx: MCP context for resolving client working directory.
     """
     if not project:
-        project = Path.cwd().name
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project = Path(resolved).name if resolved else Path.cwd().name
     docs = list_documents_in_collection(project)
     return {
         "project": project,
@@ -128,6 +153,7 @@ async def tool_reindex_project(
     project: str = "",
     project_dir: str = "",
     progress_callback: Callable | None = None,
+    ctx=None,
 ) -> dict:
     """Force a full reindex: delete all indexed data and rebuild from scratch.
 
@@ -135,6 +161,7 @@ async def tool_reindex_project(
         project: Project name. Used to look up the project directory if project_dir is empty.
         project_dir: Path to the project root. Defaults to current working directory.
         progress_callback: Optional async callable(current, total) for progress reporting.
+        ctx: MCP context for resolving client working directory.
     """
     if not project_dir:
         if project:
@@ -143,6 +170,7 @@ async def tool_reindex_project(
                 return {"error": f"Could not resolve directory for project '{project}'. Index it first with sync_skb."}
             project_dir = resolved
         else:
-            project_dir = str(Path.cwd())
+            resolved = await _resolve_project_dir_from_ctx(ctx)
+            project_dir = resolved or str(Path.cwd())
 
     return await reindex_project(project_dir, progress_callback=progress_callback)

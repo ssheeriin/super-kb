@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import Context, FastMCP
 
-from skb import store
+from skb import store, reranker
 from skb.tools import (
     tool_sync_skb,
     tool_search_docs,
@@ -26,6 +26,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 async def lifespan(server: FastMCP):
     """Warm up the ChromaDB embedding model at server startup."""
     store.warm_up()
+    reranker.warm_up()
     yield
 
 
@@ -49,15 +50,16 @@ async def sync_skb(project_dir: str = "", ctx: Context | None = None) -> dict:
     Output: {project, files_added, files_updated, files_removed, total_chunks}
     """
     progress_callback = ctx.report_progress if ctx else None
-    return await tool_sync_skb(project_dir, progress_callback=progress_callback)
+    return await tool_sync_skb(project_dir, progress_callback=progress_callback, ctx=ctx)
 
 
 @mcp.tool()
-def search_docs(
+async def search_docs(
     query: str,
     n_results: int = 5,
     project: str = "",
     search_all_projects: bool = False,
+    ctx: Context | None = None,
 ) -> dict:
     """Search the project knowledge base for relevant documentation, design decisions, API references, and code examples.
 
@@ -71,14 +73,15 @@ def search_docs(
       - project: which project (defaults to current)
       - search_all_projects: set True to search across all indexed projects
     """
-    return tool_search_docs(query, n_results, project, search_all_projects)
+    return await tool_search_docs(query, n_results, project, search_all_projects, ctx=ctx)
 
 
 @mcp.tool()
-def search_code(
+async def search_code(
     query: str,
     language: str = "",
     n_results: int = 5,
+    ctx: Context | None = None,
 ) -> dict:
     """Search the knowledge base for code examples and reference implementations.
 
@@ -90,7 +93,7 @@ def search_code(
       - language: optional filter (e.g., "python", "typescript")
       - n_results: how many results (default 5)
     """
-    return tool_search_code(query, language, n_results)
+    return await tool_search_code(query, language, n_results, ctx=ctx)
 
 
 @mcp.tool()
@@ -103,7 +106,7 @@ def list_projects() -> dict:
 
 
 @mcp.tool()
-def list_documents(project: str = "") -> dict:
+async def list_documents(project: str = "", ctx: Context | None = None) -> dict:
     """List all indexed files for a project with metadata.
 
     Shows source paths, chunk counts, and last synced timestamps for all
@@ -111,7 +114,7 @@ def list_documents(project: str = "") -> dict:
 
     Input: project (str, optional — defaults to current project)
     """
-    return tool_list_documents(project)
+    return await tool_list_documents(project, ctx=ctx)
 
 
 @mcp.tool()
@@ -142,7 +145,7 @@ async def reindex_project(
       - If both are empty, defaults to the current working directory
     """
     progress_callback = ctx.report_progress if ctx else None
-    return await tool_reindex_project(project, project_dir, progress_callback=progress_callback)
+    return await tool_reindex_project(project, project_dir, progress_callback=progress_callback, ctx=ctx)
 
 
 if __name__ == "__main__":

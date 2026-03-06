@@ -57,3 +57,9 @@ CHUNK_OVERLAPS: dict[str, int] = {
     "code": 200,
     "config": 0,
 }
+
+# ── Reranker (FlashRank) ────────────────────────────────────────────────
+RERANK_ENABLED: bool = os.environ.get("SKB_RERANK_ENABLED", "true").lower() in ("true", "1", "yes")
+RERANK_MODEL: str = os.environ.get("SKB_RERANK_MODEL", "ms-marco-TinyBERT-L-2-v2")
+RERANK_MAX_LENGTH: int = int(os.environ.get("SKB_RERANK_MAX_LENGTH", "512"))
+RERANK_RETRIEVAL_MULTIPLIER: int = int(os.environ.get("SKB_RERANK_RETRIEVAL_MULTIPLIER", "3"))
