@@ -1,4 +1,4 @@
-"""SKB MCP Server — Shared Knowledge Base for Claude Code.
+"""SKB MCP Server — Super Knowledge Base for Claude Code.
 
 Entry point: run with `uv run server.py`
 """
@@ -33,7 +33,7 @@ async def lifespan(server: FastMCP):
 mcp = FastMCP(
     "skb",
     instructions=(
-        "Shared Knowledge Base (SKB) — a local vector knowledge base. "
+        "Super Knowledge Base (SKB) — a local vector knowledge base. "
         "Each project may have a .skb/ folder with context documents. "
         "Use sync_skb to index them, then search_docs/search_code to query."
     ),

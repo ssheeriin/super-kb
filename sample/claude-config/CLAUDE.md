@@ -1,4 +1,4 @@
-## Shared Knowledge Base (.skb/)
+## Super Knowledge Base (.skb/)
 
 A local vector knowledge base is available via MCP tools prefixed with `mcp__skb__`.
 Each project may have a `.skb/` folder containing context documents (design docs,

@@ -1,4 +1,4 @@
-# SKB — Shared Knowledge Base for Claude Code
+# SKB — Super Knowledge Base for Claude Code
 
 A local MCP server that turns `.skb/` folders in your projects into a searchable vector knowledge base. Drop files in, and Claude Code can find them automatically — no `@` mentions needed.
 
@@ -107,21 +107,62 @@ cp new-doc.md my-project/.skb/
 - [uv](https://docs.astral.sh/uv/) package manager
 - Python 3.12 or 3.13
 
-### Setup
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/ssheeriin/super-kb.git ~/temp/skb
+```
 
 Dependencies install automatically on first run via `uv run`. No manual install step needed.
 
-The MCP server is already configured in `~/.claude.json` under the `/Users/I073367` project scope:
+### Step 2: Claude Code Configuration
+
+Three configurations are needed to set up SKB in Claude Code:
+
+#### 2a. MCP Server Registration (`~/.claude.json`)
+
+Add the SKB server entry under `"mcpServers"` in your `~/.claude.json` (create the file if it doesn't exist):
 
 ```json
-"skb": {
-  "command": "uv",
-  "args": ["--directory", "/Users/I073367/temp/skb", "run", "server.py"],
-  "type": "stdio"
+{
+  "mcpServers": {
+    "skb": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/super-kb", "run", "server.py"],
+      "type": "stdio"
+    }
+  }
 }
 ```
 
-Claude Code instructions in `~/.claude/CLAUDE.md` tell Claude to sync and search the knowledge base proactively.
+Replace `/path/to/super-kb` with the actual path where you cloned the repository.
+
+#### 2b. Global Instructions (`~/.claude/CLAUDE.md`)
+
+This tells Claude to automatically sync and search your knowledge base at session start. Append the contents of `sample/claude-config/CLAUDE.md` to your global instructions:
+
+```bash
+# Append to existing CLAUDE.md
+cat sample/claude-config/CLAUDE.md >> ~/.claude/CLAUDE.md
+
+# Or copy if you don't have one yet
+cp sample/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+Without this, you'd have to manually ask Claude to sync/search every time.
+
+#### 2c. Slash Command (`~/.claude/commands/skb.md`)
+
+This registers the `/skb` slash command for quick access:
+
+```bash
+mkdir -p ~/.claude/commands
+cp sample/claude-config/commands/skb.md ~/.claude/commands/skb.md
+```
+
+### Step 3: Restart Claude Code
+
+Restart Claude Code so it picks up the new MCP server and instructions.
 
 ## What Goes in `.skb/`
 

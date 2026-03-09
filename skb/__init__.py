@@ -1,1 +1,1 @@
-"""Shared Knowledge Base (SKB) — local vector knowledge base for Claude Code."""
+"""Super Knowledge Base (SKB) — local vector knowledge base for Claude Code."""

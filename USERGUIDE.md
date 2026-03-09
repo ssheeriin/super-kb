@@ -1,4 +1,4 @@
-# SKB User Guide — Shared Knowledge Base for Claude Code
+# SKB User Guide — Super Knowledge Base for Claude Code
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@
 
 ## Overview
 
-SKB (Shared Knowledge Base) is a local MCP server that turns `.skb/` folders in your projects into a searchable vector knowledge base for Claude Code. You drop documentation, code snippets, design docs, and API specs into a `.skb/` folder, and Claude can find and use them automatically — no `@` file mentions needed.
+SKB (Super Knowledge Base) is a local MCP server that turns `.skb/` folders in your projects into a searchable vector knowledge base for Claude Code. You drop documentation, code snippets, design docs, and API specs into a `.skb/` folder, and Claude can find and use them automatically — no `@` file mentions needed.
 
 Everything runs locally. No external APIs, no cloud services. Documents are embedded using ChromaDB's built-in ONNX model and stored on your machine.
 

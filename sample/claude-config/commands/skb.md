@@ -1,4 +1,4 @@
-Search or manage the shared knowledge base (.skb/ folder).
+Search or manage the super knowledge base (.skb/ folder).
 
 Usage:
 - `/skb search <query>` — Search the knowledge base for relevant docs
