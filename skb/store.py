@@ -6,6 +6,7 @@ import chromadb
 from chromadb.config import Settings
 
 from .config import CHROMADB_DIR, RERANK_ENABLED, RERANK_RETRIEVAL_MULTIPLIER
+from .embeddings import get_embedding_function
 from .reranker import rerank as rerank_results
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,12 @@ def get_or_create_collection(project: str) -> chromadb.Collection:
     safe_name = _sanitize_collection_name(project)
     return client.get_or_create_collection(
         name=safe_name,
-        metadata={"hnsw:space": "cosine"},
+        metadata={
+            "hnsw:space": "cosine",
+            "hnsw:construction_ef": 200,
+            "hnsw:search_ef": 100,
+        },
+        embedding_function=get_embedding_function(),
     )
 
 
@@ -191,18 +197,20 @@ def get_project_dir(project: str) -> str | None:
 
 
 def warm_up() -> None:
-    """Trigger ChromaDB's lazy ONNX embedding model load.
+    """Trigger the BGE embedding model download and load.
 
-    Creates a temporary collection, upserts a dummy document (which forces
-    the embedding model to load), then deletes the collection.
+    Downloads model files if needed, then creates a temporary collection
+    and upserts a dummy document to force the ONNX session to initialize.
     """
-    logger.info("Warming up ChromaDB embedding model...")
+    logger.info("Warming up embedding model (bge-small-en-v1.5)...")
+    ef = get_embedding_function()
+    ef.download_if_needed()
     client = _get_client()
     tmp_name = "skb-warmup-tmp"
-    col = client.get_or_create_collection(name=tmp_name)
+    col = client.get_or_create_collection(name=tmp_name, embedding_function=ef)
     col.upsert(ids=["warmup"], documents=["warmup"])
     client.delete_collection(name=tmp_name)
-    logger.info("ChromaDB embedding model ready.")
+    logger.info("Embedding model ready. NOTE: existing projects need reindex after model upgrade.")
 
 
 def _sanitize_collection_name(name: str) -> str:

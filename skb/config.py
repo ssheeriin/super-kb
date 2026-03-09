@@ -7,6 +7,9 @@ from pathlib import Path
 SKB_HOME = Path(os.environ.get("SKB_HOME", Path.home() / ".skb"))
 CHROMADB_DIR = SKB_HOME / "chromadb"
 
+# ── Embedding model ─────────────────────────────────────────────────────
+EMBEDDING_MODEL_DIR = SKB_HOME / "models" / "bge-small-en-v1.5"
+
 # ── .skb/ folder name ──────────────────────────────────────────────────────
 SKB_FOLDER = ".skb"
 
