@@ -33,7 +33,7 @@ my-project/
 
          ↓ auto-indexed
 
-    ChromaDB (local)          ← Vectors stored in ~/temp/skb/chromadb/
+    ChromaDB (local)          ← Vectors stored in ~/.skb/chromadb/
          ↓
     MCP Server (stdio)        ← Claude Code calls tools over JSON-RPC
          ↓
@@ -42,7 +42,8 @@ my-project/
 
 The MCP server watches each project's `.skb/` folder. When you sync, it:
 - Chunks documents by type (markdown by headers, code by functions, etc.)
-- Embeds them into ChromaDB using its default embedding model
+- Embeds them using BAAI/bge-small-en-v1.5 (custom ONNX, local — no API key needed)
+- Reranks search results with FlashRank cross-encoder for better relevance
 - Stores metadata (source file, project, section, timestamps)
 - Skips unchanged files on re-sync
 
@@ -58,7 +59,7 @@ The MCP server watches each project's `.skb/` folder. When you sync, it:
 
 ## MCP Tools
 
-The server exposes 6 tools to Claude Code:
+The server exposes 7 tools to Claude Code:
 
 | Tool | Description |
 |------|-------------|
@@ -68,15 +69,19 @@ The server exposes 6 tools to Claude Code:
 | `list_projects` | Show all indexed projects with chunk counts. |
 | `list_documents` | List indexed files for a project with metadata. |
 | `remove_project` | Delete all indexed data for a project. |
+| `reindex_project` | Force a full reindex: delete all data and rebuild from scratch. |
 
 ## Slash Command
 
 Use `/skb` in Claude Code for quick access:
 
 ```
-/skb search rate limiting     # Search the knowledge base
+/skb search <query>           # Search the knowledge base
+/skb code <query>             # Search for code examples
 /skb sync                     # Re-sync after adding files
+/skb reindex                  # Full reindex of current project
 /skb status                   # Show indexed projects
+/skb docs                     # List indexed files
 /skb help                     # Show usage
 ```
 
@@ -110,7 +115,7 @@ cp new-doc.md my-project/.skb/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/ssheeriin/super-kb.git ~/temp/skb
+git clone https://github.com/ssheeriin/super-kb.git
 ```
 
 Dependencies install automatically on first run via `uv run`. No manual install step needed.
@@ -187,12 +192,14 @@ Add `.skb/` to `.gitignore` if the docs are personal. Commit it if you want to s
 ## Project Structure
 
 ```
-~/temp/skb/
-├── pyproject.toml           # Dependencies: mcp, chromadb, pypdf
+super-kb/
+├── pyproject.toml           # Dependencies: mcp, chromadb, pypdf, flashrank
 ├── server.py                # MCP entry point (FastMCP)
 ├── skb/
 │   ├── config.py            # Constants and extension maps
 │   ├── store.py             # ChromaDB wrapper
+│   ├── embeddings.py        # Custom ONNX embedding function (bge-small-en-v1.5)
+│   ├── reranker.py          # FlashRank cross-encoder reranker
 │   ├── ingest.py            # File → chunks → vectors pipeline
 │   ├── sync.py              # .skb/ folder scanner, incremental sync
 │   ├── tools.py             # MCP tool implementations
@@ -201,7 +208,6 @@ Add `.skb/` to `.gitignore` if the docs are personal. Commit it if you want to s
 │       ├── code.py          # Function/class boundary splitting
 │       ├── text.py          # Paragraph-based splitting
 │       └── pdf.py           # pypdf extraction + splitting
-├── chromadb/                # Vector storage (auto-created)
 └── logs/
 ```
 
@@ -213,7 +219,8 @@ All components are open source and permissively licensed.
 |-----------|---------|---------|
 | MCP SDK | `mcp` (FastMCP) | MIT |
 | Vector store | ChromaDB | Apache 2.0 |
-| Embeddings | ChromaDB default (ONNX) | Apache 2.0 |
+| Embeddings | BAAI/bge-small-en-v1.5 (custom ONNX) | MIT |
+| Reranker | FlashRank (`flashrank`) | Apache 2.0 |
 | PDF parsing | pypdf | BSD-3-Clause |
 | Package manager | uv | Apache 2.0 / MIT |
 
@@ -226,7 +233,7 @@ Restart Claude Code after modifying `~/.claude.json`. Check that the `skb` entry
 Run `/skb sync` first. Check `/skb status` to confirm your project is indexed.
 
 **Wrong project detected?**
-The project name is derived from the directory name where Claude Code was started. Pass an explicit `project` parameter to `search_docs` if needed.
+The server resolves the project from the Claude Code session's working directory via MCP roots. If you're in `/Users/you/projects/my-app`, the project name is `my-app`. Pass an explicit `project` parameter to `search_docs` if needed.
 
 **ChromaDB errors on Python 3.14?**
 ChromaDB doesn't yet support Python 3.14. Use Python 3.12 or 3.13. The `pyproject.toml` enforces `requires-python = ">=3.12,<3.14"`.

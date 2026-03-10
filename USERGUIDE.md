@@ -24,7 +24,7 @@
 
 SKB (Super Knowledge Base) is a local MCP server that turns `.skb/` folders in your projects into a searchable vector knowledge base for Claude Code. You drop documentation, code snippets, design docs, and API specs into a `.skb/` folder, and Claude can find and use them automatically — no `@` file mentions needed.
 
-Everything runs locally. No external APIs, no cloud services. Documents are embedded using ChromaDB's built-in ONNX model and stored on your machine.
+Everything runs locally. No external APIs, no cloud services. Documents are embedded using BAAI/bge-small-en-v1.5 (a custom ONNX model) and stored on your machine.
 
 ---
 
@@ -45,7 +45,7 @@ Everything runs locally. No external APIs, no cloud services. Documents are embe
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/ssheeriin/super-kb.git ~/temp/skb
+git clone https://github.com/ssheeriin/super-kb.git
 ```
 
 ### Step 2: Register the MCP Server with Claude Code
@@ -157,9 +157,10 @@ my-project/
 │  3. Extract text content          (ingest.py)       │
 │  4. Chunk by type                 (chunkers/*.py)   │
 │  5. Embed & store in ChromaDB     (store.py)        │
+│  6. Rerank results with FlashRank (reranker.py)     │
 │                                                     │
 │  ChromaDB (local, on disk)                          │
-│  Location: ~/temp/skb/chromadb/                     │
+│  Location: ~/.skb/chromadb/                         │
 └─────────────────────────────────────────────────────┘
 
          ↓ search_docs / search_code tool calls
@@ -256,11 +257,14 @@ Each file type has a specialized chunker that understands its structure:
 ### Vector Storage
 
 - **Engine**: [ChromaDB](https://www.trychroma.com/) with persistent local storage
-- **Location**: `~/temp/skb/chromadb/` (next to the server code)
-- **Embedding model**: ChromaDB's default ONNX model (all-MiniLM-L6-v2) — runs locally, no API key needed
+- **Location**: `~/.skb/chromadb/` (configurable via `SKB_HOME` env var)
+- **Embedding model**: BAAI/bge-small-en-v1.5 (384d, custom ONNX) — downloaded on first run to `~/.skb/models/`
+- **Reranking**: FlashRank cross-encoder (ms-marco-TinyBERT-L-2-v2) for improved search relevance
 - **Similarity metric**: Cosine distance
 - **Organization**: One ChromaDB collection per project (named after the project directory)
 - **Telemetry**: Disabled (`anonymized_telemetry=False`)
+
+> **Upgrade note:** If upgrading from a previous version, existing indexes must be reindexed (`reindex_project` tool or `/skb reindex`) because the embedding model changed from all-MiniLM-L6-v2 to bge-small-en-v1.5. Old vectors are incompatible with the new model.
 
 Each stored chunk includes metadata:
 - `source` — relative file path within the project
@@ -291,6 +295,7 @@ Scan the `.skb/` folder and ingest/update all files. Incremental — only proces
   "files_added": 3,
   "files_updated": 1,
   "files_removed": 0,
+  "files_failed": 0,
   "total_chunks": 24
 }
 ```
@@ -427,6 +432,31 @@ Delete all indexed data for a project.
 
 ---
 
+### `reindex_project`
+
+Force a full reindex: delete all indexed data for a project and rebuild from scratch. Use when the index is corrupted, embeddings need regenerating (e.g., after an embedding model upgrade), or you want a clean slate.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project` | string | `""` | Project name — used to look up the directory from stored metadata |
+| `project_dir` | string | `""` | Explicit path to project root — takes precedence over project name |
+
+If both are empty, defaults to the current working directory.
+
+**Example response:**
+```json
+{
+  "project": "my-project",
+  "files_added": 5,
+  "files_updated": 0,
+  "files_removed": 0,
+  "files_failed": 0,
+  "total_chunks": 42
+}
+```
+
+---
+
 ## Supported File Types
 
 | Type | Extensions | Chunking Strategy | Max Chunk Size |
@@ -537,13 +567,15 @@ Subdirectories within `.skb/` are supported and scanned recursively:
 ## Project Structure
 
 ```
-~/temp/skb/
-├── pyproject.toml              # Project metadata and dependencies
+super-kb/
+├── pyproject.toml              # Project metadata and dependencies (incl. flashrank)
 ├── server.py                   # MCP entry point (FastMCP server)
 ├── skb/
 │   ├── __init__.py             # Package marker
 │   ├── config.py               # Constants: paths, extension maps, chunk sizes
 │   ├── store.py                # ChromaDB wrapper (collections, queries, CRUD)
+│   ├── embeddings.py           # Custom ONNX embedding function (bge-small-en-v1.5)
+│   ├── reranker.py             # FlashRank cross-encoder reranker
 │   ├── ingest.py               # File → content → chunks → vector store pipeline
 │   ├── sync.py                 # .skb/ folder scanner, incremental sync logic
 │   ├── tools.py                # MCP tool implementations (called by server.py)
@@ -553,7 +585,6 @@ Subdirectories within `.skb/` are supported and scanned recursively:
 │       ├── code.py             # Function/class boundary splitting (6 languages)
 │       ├── text.py             # Paragraph-based recursive splitting
 │       └── pdf.py              # PDF text splitting (extraction in ingest.py)
-├── chromadb/                   # Vector storage directory (auto-created)
 ├── logs/                       # Log directory
 └── uv.lock                     # Dependency lock file
 ```
@@ -562,9 +593,11 @@ Subdirectories within `.skb/` are supported and scanned recursively:
 
 | File | Role |
 |------|------|
-| `server.py` | Entry point. Creates a `FastMCP` server, registers 6 tools, runs via `mcp.run()`. Invoked with `uv run server.py`. |
+| `server.py` | Entry point. Creates a `FastMCP` server, registers 7 tools, runs via `mcp.run()`. Invoked with `uv run server.py`. |
 | `skb/config.py` | All constants in one place: ChromaDB path, supported extensions, language detection, chunk sizes and overlaps. |
 | `skb/store.py` | Wraps ChromaDB operations: create/get collections, upsert documents, query by text with cosine similarity, delete by source file, list collections and documents. One collection per project. |
+| `skb/embeddings.py` | Custom ONNX embedding function using BAAI/bge-small-en-v1.5. Downloads the model on first run to `~/.skb/models/`. Produces 384-dimensional vectors with L2 normalization. |
+| `skb/reranker.py` | FlashRank cross-encoder reranker. Re-scores initial retrieval results for better relevance before returning to the user. Configurable via environment variables. |
 | `skb/ingest.py` | Takes a single file, detects its type, extracts text (with `pypdf` for PDFs), calls the chunker, builds metadata, and upserts into ChromaDB. |
 | `skb/sync.py` | Scans `.skb/` recursively, compares disk files against indexed files by modification time, and orchestrates add/update/remove operations via `ingest.py` and `store.py`. |
 | `skb/tools.py` | Thin wrappers that translate MCP tool calls into `sync.py` and `store.py` function calls. Handles default project resolution from `Path.cwd()`. |
@@ -589,7 +622,7 @@ Subdirectories within `.skb/` are supported and scanned recursively:
 
 ### Wrong project detected
 
-- The project name is derived from the directory name where Claude Code was started
+- The server resolves the project from the Claude Code session's working directory via MCP roots
 - If you're in `/Users/you/projects/my-app`, the project name is `my-app`
 - Pass an explicit `project` parameter to `search_docs` if needed
 
@@ -621,6 +654,19 @@ Files over ~1MB tend to produce many chunks with diluted semantic meaning. Consi
 |-----------|---------|---------|---------|
 | MCP SDK | `mcp` (FastMCP) | MIT | Claude Code ↔ server communication |
 | Vector store | ChromaDB | Apache 2.0 | Local embedding storage and similarity search |
-| Embeddings | ChromaDB default (ONNX) | Apache 2.0 | all-MiniLM-L6-v2 model, runs locally |
+| Embeddings | BAAI/bge-small-en-v1.5 (custom ONNX) | MIT | 384-dimensional vectors, runs locally |
+| Reranker | FlashRank (`flashrank`) | Apache 2.0 | Cross-encoder reranking for improved relevance |
 | PDF parsing | pypdf | BSD-3-Clause | Extract text from PDF files |
 | Package manager | uv | Apache 2.0 / MIT | Dependency management and script runner |
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SKB_HOME` | `~/.skb` | Base directory for all SKB data (ChromaDB, models) |
+| `SKB_RERANK_ENABLED` | `true` | Enable/disable FlashRank reranking |
+| `SKB_RERANK_MODEL` | `ms-marco-TinyBERT-L-2-v2` | FlashRank model name |
+| `SKB_RERANK_MAX_LENGTH` | `512` | Max input length for reranker |
+| `SKB_RERANK_RETRIEVAL_MULTIPLIER` | `3` | Fetch N\u00d7results before reranking (e.g., 3\u00d75 = 15 candidates reranked to return top 5) |
