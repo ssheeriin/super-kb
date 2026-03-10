@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import logging
+import os
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -128,11 +129,17 @@ async def sync_skb_folder(
 
 
 def _scan_skb_files(skb_dir: Path) -> list[Path]:
-    """Recursively find all supported files in the .skb/ directory."""
+    """Recursively find all supported files in the .skb/ directory.
+
+    Uses os.walk with followlinks=True so that symlinked directories
+    are traversed (Path.rglob does not follow symlinks by default).
+    """
     files = []
-    for path in skb_dir.rglob("*"):
-        if path.is_file() and path.suffix.lower() in EXTENSION_MAP:
-            files.append(path)
+    for root, _dirs, filenames in os.walk(skb_dir, followlinks=True):
+        for fname in filenames:
+            path = Path(root) / fname
+            if path.suffix.lower() in EXTENSION_MAP:
+                files.append(path)
     return sorted(files)
 
 
