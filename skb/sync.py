@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 async def sync_skb_folder(
     project_dir: str | Path,
     progress_callback: Callable | None = None,
+    log_callback: Callable | None = None,
 ) -> dict:
     """Scan the .skb/ folder in project_dir and sync to vector store.
 
@@ -53,6 +54,9 @@ async def sync_skb_folder(
 
     if progress_callback:
         await progress_callback(0, total)
+        await asyncio.sleep(0)
+    if log_callback:
+        await log_callback(f"Syncing {total} files for project '{project}'")
         await asyncio.sleep(0)
 
     files_added = 0
@@ -105,6 +109,9 @@ async def sync_skb_folder(
         if progress_callback:
             await progress_callback(i, total)
             await asyncio.sleep(0)
+        if log_callback:
+            await log_callback(f"[{i}/{total}] {file_path.name}")
+            await asyncio.sleep(0)
 
     # Remove chunks for files that no longer exist on disk
     for source, doc in indexed_map.items():
@@ -153,6 +160,7 @@ def _file_fingerprint(file_path: Path) -> str:
 async def reindex_project(
     project_dir: str | Path,
     progress_callback: Callable | None = None,
+    log_callback: Callable | None = None,
 ) -> dict:
     """Delete all indexed data for a project and rebuild from scratch.
 
@@ -162,8 +170,11 @@ async def reindex_project(
     project = project_dir.name
 
     logger.info("Reindex requested for project '%s' — deleting collection", project)
+    if log_callback:
+        await log_callback(f"Deleting index for project '{project}'...")
+        await asyncio.sleep(0)
     delete_collection(project)
 
-    result = await sync_skb_folder(project_dir, progress_callback=progress_callback)
+    result = await sync_skb_folder(project_dir, progress_callback=progress_callback, log_callback=log_callback)
     result["reindexed"] = True
     return result

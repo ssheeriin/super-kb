@@ -31,6 +31,7 @@ async def _resolve_project_dir_from_ctx(ctx) -> str | None:
 async def tool_sync_skb(
     project_dir: str = "",
     progress_callback: Callable | None = None,
+    log_callback: Callable | None = None,
     ctx=None,
 ) -> dict:
     """Scan the .skb/ folder in the project directory and ingest/update all files.
@@ -38,12 +39,13 @@ async def tool_sync_skb(
     Args:
         project_dir: Path to the project root. Defaults to current working directory.
         progress_callback: Optional async callable(current, total) for progress reporting.
+        log_callback: Optional async callable(message) for log notifications.
         ctx: MCP context for resolving client working directory.
     """
     if not project_dir:
         resolved = await _resolve_project_dir_from_ctx(ctx)
         project_dir = resolved or str(Path.cwd())
-    return await sync_skb_folder(project_dir, progress_callback=progress_callback)
+    return await sync_skb_folder(project_dir, progress_callback=progress_callback, log_callback=log_callback)
 
 
 async def tool_search_docs(
@@ -153,6 +155,7 @@ async def tool_reindex_project(
     project: str = "",
     project_dir: str = "",
     progress_callback: Callable | None = None,
+    log_callback: Callable | None = None,
     ctx=None,
 ) -> dict:
     """Force a full reindex: delete all indexed data and rebuild from scratch.
@@ -161,6 +164,7 @@ async def tool_reindex_project(
         project: Project name. Used to look up the project directory if project_dir is empty.
         project_dir: Path to the project root. Defaults to current working directory.
         progress_callback: Optional async callable(current, total) for progress reporting.
+        log_callback: Optional async callable(message) for log notifications.
         ctx: MCP context for resolving client working directory.
     """
     if not project_dir:
@@ -173,4 +177,4 @@ async def tool_reindex_project(
             resolved = await _resolve_project_dir_from_ctx(ctx)
             project_dir = resolved or str(Path.cwd())
 
-    return await reindex_project(project_dir, progress_callback=progress_callback)
+    return await reindex_project(project_dir, progress_callback=progress_callback, log_callback=log_callback)

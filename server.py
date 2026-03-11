@@ -50,7 +50,8 @@ async def sync_skb(project_dir: str = "", ctx: Context | None = None) -> dict:
     Output: {project, files_added, files_updated, files_removed, total_chunks}
     """
     progress_callback = ctx.report_progress if ctx else None
-    return await tool_sync_skb(project_dir, progress_callback=progress_callback, ctx=ctx)
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    return await tool_sync_skb(project_dir, progress_callback=progress_callback, log_callback=log_callback, ctx=ctx)
 
 
 @mcp.tool()
@@ -145,7 +146,8 @@ async def reindex_project(
       - If both are empty, defaults to the current working directory
     """
     progress_callback = ctx.report_progress if ctx else None
-    return await tool_reindex_project(project, project_dir, progress_callback=progress_callback, ctx=ctx)
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    return await tool_reindex_project(project, project_dir, progress_callback=progress_callback, log_callback=log_callback, ctx=ctx)
 
 
 if __name__ == "__main__":
