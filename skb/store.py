@@ -196,6 +196,68 @@ def get_project_dir(project: str) -> str | None:
     return None
 
 
+def get_all_chunks(project: str) -> dict:
+    """Retrieve all chunks from a project's collection in batches.
+
+    Returns {"ids": [...], "documents": [...], "metadatas": [...], "embeddings": [...]}.
+    Returns empty structure if collection doesn't exist or is empty.
+    """
+    try:
+        collection = get_or_create_collection(project)
+    except Exception:
+        return {"ids": [], "documents": [], "metadatas": [], "embeddings": []}
+
+    total = collection.count()
+    if total == 0:
+        return {"ids": [], "documents": [], "metadatas": [], "embeddings": []}
+
+    all_ids: list = []
+    all_documents: list = []
+    all_metadatas: list = []
+    all_embeddings: list = []
+
+    batch_size = 5000
+    offset = 0
+    while offset < total:
+        batch = collection.get(
+            include=["documents", "metadatas", "embeddings"],
+            offset=offset,
+            limit=batch_size,
+        )
+        all_ids.extend(batch["ids"])
+        if batch["documents"] is not None:
+            all_documents.extend(batch["documents"])
+        if batch["metadatas"] is not None:
+            all_metadatas.extend(batch["metadatas"])
+        if batch["embeddings"] is not None:
+            all_embeddings.extend(batch["embeddings"])
+        offset += batch_size
+
+    return {
+        "ids": all_ids,
+        "documents": all_documents,
+        "metadatas": all_metadatas,
+        "embeddings": all_embeddings,
+    }
+
+
+def add_documents_with_embeddings(
+    project: str,
+    ids: list[str],
+    documents: list[str],
+    metadatas: list[dict],
+    embeddings: list[list[float]],
+) -> None:
+    """Upsert documents with pre-computed embeddings (bypasses embedding function)."""
+    collection = get_or_create_collection(project)
+    collection.upsert(
+        ids=ids,
+        documents=documents,
+        metadatas=metadatas,
+        embeddings=embeddings,
+    )
+
+
 def warm_up() -> None:
     """Trigger the BGE embedding model download and load.
 

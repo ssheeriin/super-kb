@@ -13,6 +13,7 @@ from .store import (
     list_documents_in_collection,
     delete_collection,
 )
+from .portability import export_source, import_source, export_index, import_index
 
 
 async def _resolve_project_dir_from_ctx(ctx) -> str | None:
@@ -178,3 +179,94 @@ async def tool_reindex_project(
             project_dir = resolved or str(Path.cwd())
 
     return await reindex_project(project_dir, progress_callback=progress_callback, log_callback=log_callback)
+
+
+async def tool_export_skb(
+    project_dir: str = "",
+    output_path: str = "",
+    log_callback: Callable | None = None,
+    ctx=None,
+) -> dict:
+    """Export .skb/ source files as a portable .tar.gz archive.
+
+    Args:
+        project_dir: Path to the project root. Defaults to current working directory.
+        output_path: Where to write the archive. Defaults to <project_dir>/<project>-skb-source.tar.gz.
+        log_callback: Optional async callable(message) for log notifications.
+        ctx: MCP context for resolving client working directory.
+    """
+    if not project_dir:
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project_dir = resolved or str(Path.cwd())
+    return await export_source(project_dir, output_path=output_path, log_callback=log_callback)
+
+
+async def tool_import_skb(
+    archive_path: str,
+    project_dir: str = "",
+    merge: bool = True,
+    run_sync: bool = True,
+    log_callback: Callable | None = None,
+    progress_callback: Callable | None = None,
+    ctx=None,
+) -> dict:
+    """Import a source archive into a project's .skb/ folder.
+
+    Args:
+        archive_path: Path to the .tar.gz archive.
+        project_dir: Target project root. Defaults to current working directory.
+        merge: If True, merge with existing files. If False, wipe .skb/ first.
+        run_sync: If True, run sync after extraction.
+        log_callback: Optional async callable(message) for log notifications.
+        progress_callback: Optional async callable(current, total) for progress.
+        ctx: MCP context for resolving client working directory.
+    """
+    if not project_dir:
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project_dir = resolved or str(Path.cwd())
+    return await import_source(
+        archive_path, project_dir=project_dir, merge=merge, run_sync=run_sync,
+        log_callback=log_callback, progress_callback=progress_callback,
+    )
+
+
+async def tool_export_index(
+    project: str = "",
+    output_path: str = "",
+    log_callback: Callable | None = None,
+    ctx=None,
+) -> dict:
+    """Export vector index as gzipped JSONL.
+
+    Args:
+        project: Project name. Defaults to current project.
+        output_path: Where to write the archive. Defaults to <cwd>/<project>-skb-index.jsonl.gz.
+        log_callback: Optional async callable(message) for log notifications.
+        ctx: MCP context for resolving client working directory.
+    """
+    if not project:
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project = Path(resolved).name if resolved else Path.cwd().name
+    return await export_index(project, output_path=output_path, log_callback=log_callback)
+
+
+async def tool_import_index(
+    archive_path: str,
+    project: str = "",
+    log_callback: Callable | None = None,
+    progress_callback: Callable | None = None,
+    ctx=None,
+) -> dict:
+    """Import a gzipped JSONL index archive into ChromaDB.
+
+    Args:
+        archive_path: Path to the .jsonl.gz archive.
+        project: Target project name. If empty, uses project from archive header.
+        log_callback: Optional async callable(message) for log notifications.
+        progress_callback: Optional async callable(current, total) for progress.
+        ctx: MCP context for resolving client working directory.
+    """
+    return await import_index(
+        archive_path, project=project,
+        log_callback=log_callback, progress_callback=progress_callback,
+    )

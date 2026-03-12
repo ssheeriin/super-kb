@@ -17,6 +17,10 @@ from skb.tools import (
     tool_list_documents,
     tool_remove_project,
     tool_reindex_project,
+    tool_export_skb,
+    tool_import_skb,
+    tool_export_index,
+    tool_import_index,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -148,6 +152,96 @@ async def reindex_project(
     progress_callback = ctx.report_progress if ctx else None
     log_callback = (lambda msg: ctx.info(msg)) if ctx else None
     return await tool_reindex_project(project, project_dir, progress_callback=progress_callback, log_callback=log_callback, ctx=ctx)
+
+
+@mcp.tool()
+async def export_skb(
+    project_dir: str = "",
+    output_path: str = "",
+    ctx: Context | None = None,
+) -> dict:
+    """Export .skb/ source files as a portable .tar.gz archive.
+
+    Creates a tar.gz containing all files from the project's .skb/ folder
+    plus a manifest.json. The recipient can import this archive to recreate
+    the .skb/ folder and rebuild the index.
+
+    Input:
+      - project_dir (str, optional): path to project root — defaults to current working directory
+      - output_path (str, optional): where to write the archive — defaults to <project_dir>/<project>-skb-source.tar.gz
+    """
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    return await tool_export_skb(project_dir, output_path, log_callback=log_callback, ctx=ctx)
+
+
+@mcp.tool()
+async def import_skb(
+    archive_path: str,
+    project_dir: str = "",
+    merge: bool = True,
+    run_sync: bool = True,
+    ctx: Context | None = None,
+) -> dict:
+    """Import a source archive into a project's .skb/ folder.
+
+    Extracts a .tar.gz source archive (created by export_skb) into the
+    target project's .skb/ folder and optionally rebuilds the index.
+
+    Input:
+      - archive_path (str): path to the .tar.gz archive
+      - project_dir (str, optional): target project root — defaults to current working directory
+      - merge (bool, optional): if True (default), merge with existing files; if False, replace .skb/ entirely
+      - run_sync (bool, optional): if True (default), rebuild the index after import
+    """
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    progress_callback = ctx.report_progress if ctx else None
+    return await tool_import_skb(
+        archive_path, project_dir, merge=merge, run_sync=run_sync,
+        log_callback=log_callback, progress_callback=progress_callback, ctx=ctx,
+    )
+
+
+@mcp.tool()
+async def export_index(
+    project: str = "",
+    output_path: str = "",
+    ctx: Context | None = None,
+) -> dict:
+    """Export vector index as gzipped JSONL (.jsonl.gz).
+
+    Exports all ChromaDB chunks and embeddings for a project as a compressed
+    JSONL file. Fast to import (no re-embedding needed), but requires the
+    same embedding model.
+
+    Input:
+      - project (str, optional): project name — defaults to current project
+      - output_path (str, optional): where to write the archive — defaults to <cwd>/<project>-skb-index.jsonl.gz
+    """
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    return await tool_export_index(project, output_path, log_callback=log_callback, ctx=ctx)
+
+
+@mcp.tool()
+async def import_index(
+    archive_path: str,
+    project: str = "",
+    ctx: Context | None = None,
+) -> dict:
+    """Import a gzipped JSONL index archive into ChromaDB.
+
+    Imports pre-computed embeddings from a .jsonl.gz archive (created by
+    export_index) directly into ChromaDB, bypassing the embedding step.
+
+    Input:
+      - archive_path (str): path to the .jsonl.gz archive
+      - project (str, optional): target project name — if empty, uses the project name from the archive header
+    """
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    progress_callback = ctx.report_progress if ctx else None
+    return await tool_import_index(
+        archive_path, project=project,
+        log_callback=log_callback, progress_callback=progress_callback, ctx=ctx,
+    )
 
 
 if __name__ == "__main__":
