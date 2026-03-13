@@ -59,10 +59,11 @@ The MCP server watches each project's `.skb/` folder. When you sync, it:
 
 ## MCP Tools
 
-The server exposes 7 tools to Claude Code:
+The server exposes 12 tools to Claude Code:
 
 | Tool | Description |
 |------|-------------|
+| `provision_skb` | Provision SKB into the current project by creating `.skb/`, installing the local skill, and wiring `CLAUDE.md`. |
 | `sync_skb` | Scan `.skb/` and ingest/update files. Incremental — only processes changes. |
 | `search_docs` | Semantic search across project documentation. |
 | `search_code` | Search filtered to code files only, with optional language filter. |
@@ -70,18 +71,25 @@ The server exposes 7 tools to Claude Code:
 | `list_documents` | List indexed files for a project with metadata. |
 | `remove_project` | Delete all indexed data for a project. |
 | `reindex_project` | Force a full reindex: delete all data and rebuild from scratch. |
+| `export_skb` | Export `.skb/` source files as a portable `.tar.gz` archive. |
+| `import_skb` | Import a source archive into a project's `.skb/` folder. |
+| `export_index` | Export a project's vector index as gzipped JSONL. |
+| `import_index` | Import a gzipped JSONL vector index into ChromaDB. |
 
-## Slash Command
+## Skill
 
 Use `/skb` in Claude Code for quick access:
 
 ```
+/skb provision                # Provision SKB into the current project
 /skb search <query>           # Search the knowledge base
 /skb code <query>             # Search for code examples
 /skb sync                     # Re-sync after adding files
 /skb reindex                  # Full reindex of current project
 /skb status                   # Show indexed projects
 /skb docs                     # List indexed files
+/skb export                   # Export source files and vector index
+/skb import <src> <index>     # Import source files and vector index
 /skb help                     # Show usage
 ```
 
@@ -124,23 +132,29 @@ Dependencies install automatically on first run via `uv run`. No manual install 
 
 Three configurations are needed to set up SKB in Claude Code:
 
-#### 2a. MCP Server Registration (`~/.claude.json`)
+#### 2a. MCP Server Registration (recommended: `claude mcp add --scope user`)
 
-Add the SKB server entry under `"mcpServers"` in your `~/.claude.json` (create the file if it doesn't exist):
+Register the SKB server with Claude Code using the MCP CLI:
 
-```json
-{
-  "mcpServers": {
-    "skb": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/super-kb", "run", "server.py"],
-      "type": "stdio"
-    }
-  }
-}
+```bash
+claude mcp add skb --scope user -- uv --directory /path/to/super-kb run server.py
 ```
 
 Replace `/path/to/super-kb` with the actual path where you cloned the repository.
+Use `--scope user` because SKB is intended to be available across all of your projects.
+
+Verify the registration:
+
+```bash
+claude mcp get skb
+```
+
+If SKB is already connected in a Claude session, you can ask Claude to
+"provision SKB in this project" and it will call `provision_skb` to create:
+- `.skb/`
+- `.claude/CLAUDE-skb.md`
+- `.claude/skills/skb/SKILL.md`
+- a `CLAUDE.md` import if one is missing
 
 #### 2b. Global Instructions (`~/.claude/CLAUDE.md`)
 
@@ -156,13 +170,13 @@ cp sample/claude-config/CLAUDE.md ~/.claude/CLAUDE.md
 
 Without this, you'd have to manually ask Claude to sync/search every time.
 
-#### 2c. Slash Command (`~/.claude/commands/skb.md`)
+#### 2c. Install the `skb` Skill (`~/.claude/skills/skb/SKILL.md`)
 
-This registers the `/skb` slash command for quick access:
+This installs the `skb` skill, which you can invoke directly with `/skb`:
 
 ```bash
-mkdir -p ~/.claude/commands
-cp sample/claude-config/commands/skb.md ~/.claude/commands/skb.md
+mkdir -p ~/.claude/skills/skb
+cp sample/claude-config/skills/skb/SKILL.md ~/.claude/skills/skb/SKILL.md
 ```
 
 ### Step 3: Restart Claude Code
@@ -227,7 +241,7 @@ All components are open source and permissively licensed.
 ## Troubleshooting
 
 **Server not showing up in Claude Code?**
-Restart Claude Code after modifying `~/.claude.json`. Check that the `skb` entry is not set to `"disabled": true`.
+Run `claude mcp list` or `claude mcp get skb` to confirm the server is registered. If you added it while Claude Code was already running, restart the session and check `/mcp` for connection status.
 
 **Search returns no results?**
 Run `/skb sync` first. Check `/skb status` to confirm your project is indexed.

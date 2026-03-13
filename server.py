@@ -10,6 +10,7 @@ from mcp.server.fastmcp import Context, FastMCP
 
 from skb import store, reranker
 from skb.tools import (
+    tool_provision_skb,
     tool_sync_skb,
     tool_search_docs,
     tool_search_code,
@@ -39,10 +40,30 @@ mcp = FastMCP(
     instructions=(
         "Super Knowledge Base (SKB) — a local vector knowledge base. "
         "Each project may have a .skb/ folder with context documents. "
-        "Use sync_skb to index them, then search_docs/search_code to query."
+        "Use provision_skb to bootstrap a project, sync_skb to index it, "
+        "then search_docs/search_code to query."
     ),
     lifespan=lifespan,
 )
+
+
+@mcp.tool()
+async def provision_skb(
+    project_dir: str = "",
+    force: bool = False,
+    ctx: Context | None = None,
+) -> dict:
+    """Provision SKB into the current project.
+
+    Creates a local `.skb/` folder, installs the project-local `skb` skill,
+    writes `.claude/CLAUDE-skb.md`, and wires `CLAUDE.md` to import it.
+
+    Input:
+      - project_dir (str, optional): path to the project root — defaults to the current working directory
+      - force (bool, optional): if True, overwrite generated SKB files when they differ from the templates
+    """
+    log_callback = (lambda msg: ctx.info(msg)) if ctx else None
+    return await tool_provision_skb(project_dir, force=force, log_callback=log_callback, ctx=ctx)
 
 
 @mcp.tool()

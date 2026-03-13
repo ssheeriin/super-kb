@@ -4,6 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import unquote
 
+from .provisioning import provision_project
 from .sync import sync_skb_folder, reindex_project
 from .store import (
     get_project_dir,
@@ -47,6 +48,26 @@ async def tool_sync_skb(
         resolved = await _resolve_project_dir_from_ctx(ctx)
         project_dir = resolved or str(Path.cwd())
     return await sync_skb_folder(project_dir, progress_callback=progress_callback, log_callback=log_callback)
+
+
+async def tool_provision_skb(
+    project_dir: str = "",
+    force: bool = False,
+    log_callback: Callable | None = None,
+    ctx=None,
+) -> dict:
+    """Provision SKB into the current project.
+
+    Args:
+        project_dir: Path to the project root. Defaults to current working directory.
+        force: If True, overwrite generated SKB files when they differ from the templates.
+        log_callback: Optional async callable(message) for log notifications.
+        ctx: MCP context for resolving client working directory.
+    """
+    if not project_dir:
+        resolved = await _resolve_project_dir_from_ctx(ctx)
+        project_dir = resolved or str(Path.cwd())
+    return await provision_project(project_dir, force=force, log_callback=log_callback)
 
 
 async def tool_search_docs(

@@ -50,21 +50,27 @@ git clone https://github.com/ssheeriin/super-kb.git
 
 ### Step 2: Register the MCP Server with Claude Code
 
-Add the following entry to your `~/.claude.json` file under `"mcpServers"`:
+Register the server using Claude Code's MCP CLI:
 
-```json
-{
-  "mcpServers": {
-    "skb": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/skb", "run", "server.py"],
-      "type": "stdio"
-    }
-  }
-}
+```bash
+claude mcp add skb --scope user -- uv --directory /path/to/super-kb run server.py
 ```
 
-Replace `/path/to/skb` with the actual path where you cloned the repository (e.g., `/Users/yourname/temp/skb`).
+Replace `/path/to/super-kb` with the actual path where you cloned the repository (e.g., `/Users/yourname/dev/super-kb`).
+Use `--scope user` so SKB is available in every project on your machine.
+
+Verify the registration:
+
+```bash
+claude mcp get skb
+```
+
+If SKB is already connected in a Claude session, you can ask Claude to
+"provision SKB in this project" and it will call `provision_skb` to create:
+- `.skb/`
+- `.claude/CLAUDE-skb.md`
+- `.claude/skills/skb/SKILL.md`
+- a `CLAUDE.md` import if one is missing
 
 ### Step 3: Configure Claude Code Instructions (Recommended)
 
@@ -82,9 +88,18 @@ When starting a session in a project that has a `.skb/` folder:
 
 This is the key mechanism that makes the auto-detection and auto-indexing feel "automatic" — Claude reads these instructions and proactively calls the tools.
 
-### Step 4: Restart Claude Code
+### Step 4: Optional - Install the `skb` Skill
 
-After modifying `~/.claude.json`, restart Claude Code so it picks up the new MCP server.
+```bash
+mkdir -p ~/.claude/skills/skb
+cp sample/claude-config/skills/skb/SKILL.md ~/.claude/skills/skb/SKILL.md
+```
+
+This gives you `/skb search`, `/skb sync`, `/skb reindex`, `/skb export`, `/skb import`, and related shortcuts.
+
+### Step 5: Start or Restart Claude Code
+
+Start or restart Claude Code so it picks up the new MCP server and any new skill files.
 
 ---
 
@@ -279,6 +294,39 @@ Each stored chunk includes metadata:
 ---
 
 ## MCP Tools Reference
+
+### `provision_skb`
+
+Provision SKB into the current project by creating `.skb/`, installing the
+project-local skill, writing `.claude/CLAUDE-skb.md`, and wiring `CLAUDE.md`
+to import it.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_dir` | string | Current working directory | Path to the project root |
+| `force` | bool | false | Overwrite generated SKB files when they differ from the templates |
+
+**Example response:**
+```json
+{
+  "project": "my-project",
+  "created_directories": [".skb", ".claude/skills/skb"],
+  "created_files": [
+    ".claude/CLAUDE-skb.md",
+    ".claude/skills/skb/SKILL.md",
+    "CLAUDE.md"
+  ],
+  "updated_files": [],
+  "skipped_files": [],
+  "next_steps": [
+    "Add project documents to .skb/",
+    "Restart Claude Code or open a new session to load the local skill and project CLAUDE.md",
+    "Run sync_skb after adding files to .skb/"
+  ]
+}
+```
+
+---
 
 ### `sync_skb`
 
@@ -608,10 +656,10 @@ super-kb/
 
 ### Server not showing up in Claude Code
 
-- Verify the `skb` entry exists in `~/.claude.json` under `"mcpServers"`
-- Ensure `"disabled": true` is NOT set on the entry
-- Restart Claude Code after modifying the config
-- Test manually: `uv --directory /path/to/skb run server.py` — it should start without errors
+- Run `claude mcp list` or `claude mcp get skb` to confirm the server is registered
+- Check Claude Code's MCP connection status with `/mcp`
+- Restart Claude Code after adding the server or skill file
+- Test manually: `uv --directory /path/to/super-kb run server.py` — it should start without errors
 
 ### Search returns no results
 
