@@ -53,11 +53,17 @@ git clone https://github.com/ssheeriin/super-kb.git
 Register the server using Claude Code's MCP CLI:
 
 ```bash
-claude mcp add skb --scope user -- uv --directory /path/to/super-kb run server.py
+claude mcp add skb --scope user -- uv --directory /path/to/super-kb run python -m skb
 ```
 
 Replace `/path/to/super-kb` with the actual path where you cloned the repository (e.g., `/Users/yourname/dev/super-kb`).
 Use `--scope user` so SKB is available in every project on your machine.
+
+If you installed SKB from a GitHub release artifact, register the installed executable instead:
+
+```bash
+claude mcp add skb --scope user -- skb-mcp-server
+```
 
 Verify the registration:
 
@@ -617,23 +623,28 @@ Subdirectories within `.skb/` are supported and scanned recursively:
 ```
 super-kb/
 ├── pyproject.toml              # Project metadata and dependencies (incl. flashrank)
-├── server.py                   # MCP entry point (FastMCP server)
+├── README.md                   # High-level overview and setup
+├── USERGUIDE.md                # Detailed usage and architecture guide
+├── tests/                      # Integration and provisioning tests
 ├── skb/
 │   ├── __init__.py             # Package marker
+│   ├── __main__.py             # `python -m skb` entry point
+│   ├── server.py               # MCP server entry point (FastMCP server)
 │   ├── config.py               # Constants: paths, extension maps, chunk sizes
 │   ├── store.py                # ChromaDB wrapper (collections, queries, CRUD)
 │   ├── embeddings.py           # Custom ONNX embedding function (bge-small-en-v1.5)
 │   ├── reranker.py             # FlashRank cross-encoder reranker
 │   ├── ingest.py               # File → content → chunks → vector store pipeline
 │   ├── sync.py                 # .skb/ folder scanner, incremental sync logic
-│   ├── tools.py                # MCP tool implementations (called by server.py)
+│   ├── tools.py                # MCP tool implementations (called by the server entry point)
+│   ├── templates/              # Bundled provisioning templates
 │   └── chunkers/
 │       ├── __init__.py         # Dispatcher: routes doc_type to chunker
 │       ├── markdown.py         # Header-aware markdown splitting
 │       ├── code.py             # Function/class boundary splitting (6 languages)
 │       ├── text.py             # Paragraph-based recursive splitting
 │       └── pdf.py              # PDF text splitting (extraction in ingest.py)
-├── logs/                       # Log directory
+├── sample/                     # Example Claude Code config files
 └── uv.lock                     # Dependency lock file
 ```
 
@@ -641,7 +652,8 @@ super-kb/
 
 | File | Role |
 |------|------|
-| `server.py` | Entry point. Creates a `FastMCP` server, registers 7 tools, runs via `mcp.run()`. Invoked with `uv run server.py`. |
+| `skb/server.py` | Entry point. Creates a `FastMCP` server, registers the 12 MCP tools, and runs via `mcp.run()`. Invoked with `python -m skb` or the installed `skb-mcp-server` command. |
+| `skb/__main__.py` | Thin module entry point so `python -m skb` runs the package directly. |
 | `skb/config.py` | All constants in one place: ChromaDB path, supported extensions, language detection, chunk sizes and overlaps. |
 | `skb/store.py` | Wraps ChromaDB operations: create/get collections, upsert documents, query by text with cosine similarity, delete by source file, list collections and documents. One collection per project. |
 | `skb/embeddings.py` | Custom ONNX embedding function using BAAI/bge-small-en-v1.5. Downloads the model on first run to `~/.skb/models/`. Produces 384-dimensional vectors with L2 normalization. |
@@ -659,7 +671,8 @@ super-kb/
 - Run `claude mcp list` or `claude mcp get skb` to confirm the server is registered
 - Check Claude Code's MCP connection status with `/mcp`
 - Restart Claude Code after adding the server or skill file
-- Test manually: `uv --directory /path/to/super-kb run server.py` — it should start without errors
+- Test manually from a checkout: `uv --directory /path/to/super-kb run python -m skb` — it should start without errors
+- Test manually from an installed release: `skb-mcp-server`
 
 ### Search returns no results
 

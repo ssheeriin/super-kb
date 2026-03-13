@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from importlib.resources import files
 from pathlib import Path
 
 from .config import SKB_FOLDER
@@ -10,14 +11,10 @@ PROJECT_IMPORT_LINE = "@./.claude/CLAUDE-skb.md"
 PROJECT_CLAUDE_HEADER = "# Project Instructions"
 
 
-def _repo_root() -> Path:
-    """Return the repository root when running from a source checkout."""
-    return Path(__file__).resolve().parent.parent
-
-
-def _sample_config_root() -> Path:
-    """Return the sample Claude config directory."""
-    return _repo_root() / "sample" / "claude-config"
+def _template_text(*relative_parts: str) -> str:
+    """Load a bundled SKB provisioning template."""
+    template_path = files("skb").joinpath("templates", "claude-config", *relative_parts)
+    return template_path.read_text(encoding="utf-8")
 
 
 def _relative_to_project(path: Path, project_dir: Path) -> str:
@@ -104,17 +101,15 @@ async def provision_project(
     if not project_dir.exists() or not project_dir.is_dir():
         return {"error": f"Project directory does not exist: {project_dir}"}
 
-    sample_root = _sample_config_root()
-    template_claude = sample_root / "CLAUDE.md"
-    template_skill = sample_root / "skills" / "skb" / "SKILL.md"
-
-    missing_templates = [str(path) for path in (template_claude, template_skill) if not path.is_file()]
-    if missing_templates:
+    try:
+        template_claude = _template_text("CLAUDE.md")
+        template_skill = _template_text("skills", "skb", "SKILL.md")
+    except FileNotFoundError as exc:
         return {
             "project": project_dir.name,
             "project_dir": str(project_dir),
             "error": "Missing SKB provisioning templates",
-            "missing_templates": missing_templates,
+            "missing_templates": [str(exc)],
         }
 
     created_directories: list[str] = []
@@ -133,7 +128,7 @@ async def provision_project(
 
     await _ensure_file_from_template(
         project_skb_claude,
-        _read_text(template_claude),
+        template_claude,
         project_dir,
         created_files,
         updated_files,
@@ -143,7 +138,7 @@ async def provision_project(
     )
     await _ensure_file_from_template(
         project_skill_dir / "SKILL.md",
-        _read_text(template_skill),
+        template_skill,
         project_dir,
         created_files,
         updated_files,

@@ -41,7 +41,7 @@ cp sample/claude-config/skills/skb/SKILL.md ~/.claude/skills/skb/SKILL.md
 Register SKB with Claude Code using the MCP CLI:
 
 ```bash
-claude mcp add skb --scope user -- uv --directory /path/to/super-kb run server.py
+claude mcp add skb --scope user -- uv --directory /path/to/super-kb run python -m skb
 ```
 
 Replace `/path/to/super-kb` with the actual path where you cloned this repo.

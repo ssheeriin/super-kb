@@ -1,27 +1,24 @@
-"""SKB MCP Server — Super Knowledge Base for Claude Code.
-
-Entry point: run with `uv run server.py`
-"""
+"""SKB MCP Server — Super Knowledge Base for Claude Code."""
 
 import logging
 from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import Context, FastMCP
 
-from skb import store, reranker
-from skb.tools import (
-    tool_provision_skb,
-    tool_sync_skb,
-    tool_search_docs,
-    tool_search_code,
-    tool_list_projects,
-    tool_list_documents,
-    tool_remove_project,
-    tool_reindex_project,
-    tool_export_skb,
-    tool_import_skb,
+from . import reranker, store
+from .tools import (
     tool_export_index,
+    tool_export_skb,
     tool_import_index,
+    tool_import_skb,
+    tool_list_documents,
+    tool_list_projects,
+    tool_provision_skb,
+    tool_reindex_project,
+    tool_remove_project,
+    tool_search_code,
+    tool_search_docs,
+    tool_sync_skb,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -265,5 +262,10 @@ async def import_index(
     )
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the SKB MCP server."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
