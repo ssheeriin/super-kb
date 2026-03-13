@@ -43,11 +43,12 @@ This is the recommended path for normal users.
 1. Install directly from the latest GitHub release:
 
 ```bash
-uv tool install https://github.com/ssheeriin/super-kb/releases/latest/download/skb_mcp_server-latest-py3-none-any.whl
+UV_SKIP_WHEEL_FILENAME_CHECK=1 uv tool install https://github.com/ssheeriin/super-kb/releases/latest/download/skb_mcp_server-0-py3-none-any.whl
 ```
 
-The stable `skb_mcp_server-latest-py3-none-any.whl` filename means the command
-does not need to change for each release.
+The stable `skb_mcp_server-0-py3-none-any.whl` alias keeps the URL fixed across
+releases. `UV_SKIP_WHEEL_FILENAME_CHECK=1` is required because the stable alias
+filename intentionally does not match the package's real version metadata.
 
 2. Register the installed MCP server with Claude Code:
 
@@ -71,7 +72,7 @@ If you want a fixed version instead of the latest release, install the versioned
 wheel directly:
 
 ```bash
-uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.1/skb_mcp_server-0.2.1-py3-none-any.whl
+uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.2/skb_mcp_server-0.2.2-py3-none-any.whl
 ```
 
 ### Install from Source Checkout

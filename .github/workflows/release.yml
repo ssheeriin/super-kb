@@ -89,7 +89,7 @@ jobs:
             exit 1
           fi
           wheel_path=$(find dist -maxdepth 1 -name '*.whl' -print)
-          cp "${wheel_path}" dist/skb_mcp_server-latest-py3-none-any.whl
+          cp "${wheel_path}" dist/skb_mcp_server-0-py3-none-any.whl
 
       - name: Generate SHA256 checksums
         run: |
