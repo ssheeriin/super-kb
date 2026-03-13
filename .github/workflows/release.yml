@@ -80,6 +80,17 @@ jobs:
         run: |
           python -m build
 
+      - name: Create stable wheel alias
+        run: |
+          set -eu
+          wheel_count=$(find dist -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')
+          if [ "${wheel_count}" != "1" ]; then
+            echo "Expected exactly one wheel in dist/, found ${wheel_count}."
+            exit 1
+          fi
+          wheel_path=$(find dist -maxdepth 1 -name '*.whl' -print)
+          cp "${wheel_path}" dist/skb_mcp_server-latest-py3-none-any.whl
+
       - name: Generate SHA256 checksums
         run: |
           sha256sum dist/* > SHA256SUMS.txt

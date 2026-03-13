@@ -40,23 +40,38 @@ Typical use cases:
 
 This is the recommended path for normal users.
 
-1. Download the latest `.whl` asset from the GitHub Releases page.
-2. Install it with `uv`:
+1. Install directly from the latest GitHub release:
 
 ```bash
-uv tool install ./skb_mcp_server-<version>-py3-none-any.whl
+uv tool install https://github.com/ssheeriin/super-kb/releases/latest/download/skb_mcp_server-latest-py3-none-any.whl
 ```
 
-3. Register the installed MCP server with Claude Code:
+The stable `skb_mcp_server-latest-py3-none-any.whl` filename means the command
+does not need to change for each release.
+
+2. Register the installed MCP server with Claude Code:
 
 ```bash
 claude mcp add skb --scope user -- skb-mcp-server
 ```
 
-4. Verify the registration:
+`skb-mcp-server` is not a placeholder. It is the real executable installed by
+the package, so users can copy-paste the command above after the install step
+completes successfully.
+
+3. Verify the registration:
 
 ```bash
 claude mcp get skb
+```
+
+### Pin to a Specific Release
+
+If you want a fixed version instead of the latest release, install the versioned
+wheel directly:
+
+```bash
+uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.0/skb_mcp_server-0.2.0-py3-none-any.whl
 ```
 
 ### Install from Source Checkout
