@@ -71,7 +71,7 @@ If you want a fixed version instead of the latest release, install the versioned
 wheel directly:
 
 ```bash
-uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.0/skb_mcp_server-0.2.0-py3-none-any.whl
+uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.1/skb_mcp_server-0.2.1-py3-none-any.whl
 ```
 
 ### Install from Source Checkout
