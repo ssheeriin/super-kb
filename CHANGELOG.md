@@ -7,12 +7,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-03-14
+
 ### Added
 - `uninstall.sh` and `uninstall.ps1` for removing the machine-level install and optional cache/project MCP state.
 - `skb-mcp-server remove-mcp-config` for cleaning up project-scoped `.mcp.json` entries.
 
 ### Changed
 - The installer now writes a user-scoped install manifest so uninstall can remove the exact installed paths more safely.
+- `skb-mcp-server` now prints usage in an interactive terminal when run without arguments, while still starting the MCP server for non-interactive stdio launches.
 
 ## [0.2.7] - 2026-03-14
 
