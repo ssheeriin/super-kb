@@ -1478,9 +1478,10 @@ wheels = [
 
 [[package]]
 name = "skb-mcp-server"
-version = "0.2.6"
+version = "0.2.7"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
     { name = "chromadb" },
     { name = "flashrank" },
     { name = "mcp", extra = ["cli"] },
@@ -1499,6 +1500,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "build", marker = "extra == 'build'", specifier = ">=1.2" },
+    { name = "certifi", specifier = ">=2024.0" },
     { name = "chromadb", specifier = ">=1.0" },
     { name = "flashrank", specifier = ">=0.2.10" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.26" },

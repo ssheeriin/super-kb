@@ -1,6 +1,6 @@
 [project]
 name = "skb-mcp-server"
-version = "0.2.6"
+version = "0.2.7"
 description = "Super Knowledge Base MCP server for Claude Code"
 requires-python = ">=3.12,<3.14"
 readme = "README.md"
@@ -29,6 +29,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "certifi>=2024.0",
     "mcp[cli]>=1.26",
     "chromadb>=1.0",
     "pypdf>=5.0",

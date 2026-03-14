@@ -7,6 +7,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-03-14
+
+### Changed
+- Fixed packaged-model downloads by using an explicit `certifi` CA bundle in the embedded downloader.
+- Added coverage for the CA-bundle download path used by the standalone release artifacts.
+
 ## [0.2.6] - 2026-03-14
 
 ### Changed

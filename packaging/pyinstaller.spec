@@ -14,6 +14,7 @@ binaries = []
 hiddenimports = []
 
 for package_name in (
+    "certifi",
     "skb",
     "chromadb",
     "mcp",
@@ -29,6 +30,7 @@ for package_name in (
     hiddenimports += package_hiddenimports
 
 for distribution_name in (
+    "certifi",
     "skb-mcp-server",
     "chromadb",
     "mcp",

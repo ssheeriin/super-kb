@@ -9,11 +9,14 @@ transitive deps of chromadb.
 import importlib
 import logging
 import os
+import shutil
+import ssl
 import urllib.request
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, cast
 
+import certifi
 import numpy as np
 import numpy.typing as npt
 
@@ -60,7 +63,7 @@ class BGESmallEmbedding(EmbeddingFunction[Documents]):
             local_path.parent.mkdir(parents=True, exist_ok=True)
             url = f"{_HF_BASE_URL}/{rel_path}"
             logger.info("Downloading %s → %s", url, local_path)
-            urllib.request.urlretrieve(url, str(local_path))
+            _download_to_path(url, local_path)
             logger.info("Downloaded %s", local_path.name)
 
     # ── Lazy-loaded resources ───────────────────────────────────────────
@@ -182,3 +185,10 @@ def get_embedding_function() -> BGESmallEmbedding:
     if _embedding_fn is None:
         _embedding_fn = BGESmallEmbedding()
     return _embedding_fn
+
+
+def _download_to_path(url: str, destination: Path) -> None:
+    """Download a file with an explicit CA bundle for packaged binaries."""
+    context = ssl.create_default_context(cafile=certifi.where())
+    with urllib.request.urlopen(url, context=context) as response, destination.open("wb") as output:
+        shutil.copyfileobj(response, output)
