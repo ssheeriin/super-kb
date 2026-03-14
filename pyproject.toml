@@ -1,6 +1,6 @@
 [project]
 name = "skb-mcp-server"
-version = "0.2.4"
+version = "0.2.5"
 description = "Super Knowledge Base MCP server for Claude Code"
 requires-python = ">=3.12,<3.14"
 readme = "README.md"

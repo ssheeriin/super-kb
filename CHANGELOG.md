@@ -7,9 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
-## [0.2.4] - 2026-03-14
+## [0.2.5] - 2026-03-14
 
 ### Changed
+- Fixed the standalone release workflow after an invalid matrix entry blocked tag-based releases.
 - Switched the Intel macOS standalone build to GitHub's supported `macos-15-intel` runner label for public repositories.
 
 ## [0.2.3] - 2026-03-14

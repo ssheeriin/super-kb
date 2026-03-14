@@ -107,8 +107,7 @@ jobs:
           - os: ubuntu-latest
             platform-id: linux-x64
             smoke-command: dist/pyinstaller/linux-x64/skb-mcp-server/skb-mcp-server
-          - os: macos-13
-            os: macos-15-intel
+          - os: macos-15-intel
             platform-id: macos-x64
             smoke-command: dist/pyinstaller/macos-x64/skb-mcp-server/skb-mcp-server
           - os: macos-14
