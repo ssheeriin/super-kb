@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import shutil
 import subprocess
@@ -127,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
         parser = build_parser()
-        if sys.stdin.isatty() and sys.stdout.isatty():
+        if _should_print_help_for_no_args():
             parser.print_help()
             return 0
         return _handle_serve(argparse.Namespace())
@@ -144,6 +145,31 @@ def main(argv: list[str] | None = None) -> int:
 def _handle_serve(_args: argparse.Namespace) -> int:
     serve_server()
     return 0
+
+
+def _should_print_help_for_no_args() -> bool:
+    """Treat an attached terminal on stdout/stderr as an interactive invocation."""
+    return _stream_isatty(sys.stdout) or _stream_isatty(sys.stderr)
+
+
+def _stream_isatty(stream: object) -> bool:
+    """Check whether a stream is attached to a terminal, including low-level fd probing."""
+    isatty = getattr(stream, "isatty", None)
+    if callable(isatty):
+        try:
+            if isatty():
+                return True
+        except OSError:
+            pass
+
+    fileno = getattr(stream, "fileno", None)
+    if callable(fileno):
+        try:
+            return os.isatty(fileno())
+        except (AttributeError, OSError, ValueError):
+            return False
+
+    return False
 
 
 def _handle_version(args: argparse.Namespace) -> int:

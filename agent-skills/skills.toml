@@ -1,0 +1,35 @@
+[skills.clean-room-smoke]
+description = "Run or plan a clean-room install and provisioning smoke test for SKB, including install, MCP registration, provisioning, sync, and search."
+body = "clean-room-smoke/body.md"
+
+[skills.docs-sync]
+description = "Keep README, USERGUIDE, sample Claude config, and release-facing docs aligned with runtime or packaging changes."
+body = "docs-sync/body.md"
+
+[skills.implement-feature]
+description = "Plan and implement a feature in super-kb across runtime, tests, packaging, and docs."
+body = "implement-feature/body.md"
+
+[skills.mcp-tooling]
+description = "Add or change MCP tools, provisioning behavior, CLI mappings, and project MCP config flows in super-kb."
+body = "mcp-tooling/body.md"
+
+[skills.packaging-release]
+description = "Work on installers, uninstallers, PyInstaller packaging, GitHub release automation, and release validation."
+body = "packaging-release/body.md"
+
+[skills.review-plan]
+description = "Review a plan against the current super-kb codebase and restructure it into clear execution phases."
+body = "review-plan/body.md"
+
+[skills.run-checks]
+description = "Run the super-kb validation commands, especially pytest, build-validation, and Python syntax checks."
+body = "run-checks/body.md"
+
+[skills.skb]
+description = "Search and manage the local Super Knowledge Base (.skb), including provisioning, sync, search, reindex, export, and import."
+body = "skb/body.md"
+
+[skills.skb.target_overrides.claude]
+argument-hint = "provision [--force] | search <query> | code <query> [lang:<language>] | sync | reindex [project] | status | docs | export [path] | export-source [path] | export-index [path] | import <source_path> <index_path> | import-source <path> [--replace] | import-index <path> | help"
+disable-model-invocation = true

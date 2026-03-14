@@ -132,8 +132,8 @@ def test_remove_project_mcp_config_returns_unchanged_when_absent(tmp_path: Path)
 
 
 def test_main_without_args_prints_help_for_interactive_terminal(capsys, monkeypatch) -> None:
-    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stderr, "isatty", lambda: True)
     monkeypatch.setattr(cli, "_handle_serve", lambda _args: (_ for _ in ()).throw(AssertionError("serve should not run")))
 
     exit_code = cli.main([])
@@ -144,8 +144,33 @@ def test_main_without_args_prints_help_for_interactive_terminal(capsys, monkeypa
 
 
 def test_main_without_args_starts_server_for_non_interactive_stdio(monkeypatch) -> None:
-    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: False)
     monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: False)
+    monkeypatch.setattr(cli.sys.stderr, "isatty", lambda: False)
     monkeypatch.setattr(cli, "_handle_serve", lambda _args: 0)
 
     assert cli.main([]) == 0
+
+
+def test_main_without_args_prints_help_when_only_stdout_is_a_tty(capsys, monkeypatch) -> None:
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr(cli.sys.stderr, "isatty", lambda: False)
+    monkeypatch.setattr(cli, "_handle_serve", lambda _args: (_ for _ in ()).throw(AssertionError("serve should not run")))
+
+    exit_code = cli.main([])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "usage: skb-mcp-server" in captured.out
+
+
+def test_stream_isatty_falls_back_to_os_probe(monkeypatch) -> None:
+    class Stream:
+        def isatty(self) -> bool:
+            return False
+
+        def fileno(self) -> int:
+            return 123
+
+    monkeypatch.setattr(cli.os, "isatty", lambda fd: fd == 123)
+
+    assert cli._stream_isatty(Stream()) is True

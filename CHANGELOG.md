@@ -7,6 +7,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-03-13
+
+### Added
+- Cross-tool agentic-coding scaffolding with shared `AGENTS.md` rules, a Claude adapter, Cline rules, and portable skills generated for Claude, Codex, and Cline.
+
+### Changed
+- Fixed the packaged `skb-mcp-server` no-argument path so interactive invocations reliably print usage instead of starting and hanging as an MCP server.
+
 ## [0.2.8] - 2026-03-14
 
 ### Added
