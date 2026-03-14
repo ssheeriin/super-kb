@@ -12,6 +12,8 @@ Recommended team workflow:
 
 1. Each developer installs `skb-mcp-server` once with `install.sh` or
    `install.ps1`.
+   macOS is the verified path today; Linux and Windows standalone bundles are
+   alpha until they are manually validated outside CI.
 2. The Java repo commits `.mcp.json`.
 3. Developers open Claude Code in the repo.
 4. Claude can use SKB in that project without each developer manually running

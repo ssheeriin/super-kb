@@ -181,7 +181,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
+          notes=$(cat <<'EOF'
+          Standalone bundle status for this release:
+          - macOS bundles were clean-room tested against the public release flow.
+          - Linux and Windows standalone bundles are alpha and currently have CI smoke coverage only.
+          EOF
+          )
           gh release create "${GITHUB_REF_NAME}" \
             release-assets/* \
             --verify-tag \
-            --generate-notes
+            --generate-notes \
+            --notes "$notes"

@@ -63,6 +63,12 @@ not use `uv`. The installer scripts download the correct standalone binary
 bundle from the latest GitHub release, verify its checksum, and install
 `skb-mcp-server` into a user-local location.
 
+Platform status:
+
+- macOS: clean-room tested against the public release flow
+- Linux: alpha standalone bundle, CI smoke-tested but not manually validated
+- Windows: alpha standalone bundle, CI smoke-tested but not manually validated
+
 macOS or Linux:
 
 ```bash
@@ -166,7 +172,7 @@ If you already use Python packaging tools, you can still install a release
 wheel directly.
 
 ```bash
-uv tool install https://github.com/ssheeriin/super-kb/releases/download/v0.2.2/skb_mcp_server-0.2.2-py3-none-any.whl
+uv tool install https://github.com/ssheeriin/super-kb/releases/latest/download/skb_mcp_server-0-py3-none-any.whl
 ```
 
 ### Install from Source Checkout
@@ -413,6 +419,7 @@ super-kb/
 - If you get a "No .skb/ folder found" error, provision the project first.
 - If indexing behaves oddly after large changes, run `/skb reindex`.
 - The wheel and source-checkout install paths support Python 3.12 or 3.13. The standalone binary installers do not require a separately managed Python runtime.
+- Linux and Windows standalone bundles are alpha until they have been manually validated outside CI.
 
 ## Development
 

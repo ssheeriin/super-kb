@@ -1478,7 +1478,7 @@ wheels = [
 
 [[package]]
 name = "skb-mcp-server"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },

@@ -14,7 +14,7 @@ usage() {
 Install SKB from GitHub Releases.
 
 Usage:
-  install.sh [--version v0.2.2] [--install-root PATH] [--bin-dir PATH] [--register-claude] [--bootstrap-model] [--write-project-mcp PATH]
+  install.sh [--version vX.Y.Z] [--install-root PATH] [--bin-dir PATH] [--register-claude] [--bootstrap-model] [--write-project-mcp PATH]
 EOF
 }
 
@@ -113,8 +113,17 @@ detect_platform_id() {
   esac
 }
 
+print_platform_notice() {
+  case "$1" in
+    linux-x64)
+      echo "Warning: the Linux standalone bundle is currently alpha and has CI smoke coverage only." >&2
+      ;;
+  esac
+}
+
 need_cmd tar
 platform_id=$(detect_platform_id)
+print_platform_notice "$platform_id"
 asset_name="skb-mcp-server-${platform_id}.tar.gz"
 release_ref="$VERSION"
 if [ "$release_ref" != "latest" ]; then

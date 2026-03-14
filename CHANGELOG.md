@@ -7,11 +7,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-14
+
 ### Added
 - Standalone installer scripts for macOS/Linux and Windows.
 - Project-scoped `.mcp.json` generation for team-owned repositories.
 - CLI commands for diagnostics, version reporting, and model bootstrap.
 - Open-source community files and GitHub templates.
+
+### Changed
+- Added explicit release notes and installer warnings that Linux and Windows standalone bundles are alpha.
+- Simplified the alternative wheel install command to use the stable latest-release alias.
 
 ## [0.2.2] - 2026-03-13
 

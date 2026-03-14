@@ -33,7 +33,7 @@ Everything runs locally. No external APIs, no cloud services. Documents are embe
 | Requirement | Version | Notes |
 |-------------|---------|-------|
 | **Claude Code** | Latest | The Claude Code CLI (`claude`) |
-| **macOS/Linux/Windows** | Current | Needed for the standalone installer scripts |
+| **macOS/Linux/Windows** | Current | Needed for the standalone installer scripts. macOS is clean-room tested; Linux and Windows are alpha with CI smoke coverage only. |
 | **Python** | 3.12 or 3.13 | Only required for wheel or source-checkout installs |
 | **uv** | Latest | Only required for the source-checkout workflow |
 
@@ -46,6 +46,9 @@ Everything runs locally. No external APIs, no cloud services. Documents are embe
 ### Step 1: Install SKB
 
 Recommended for most users:
+
+- macOS is the verified public-release install path.
+- Linux and Windows standalone bundles are alpha until they are manually validated outside CI.
 
 macOS or Linux:
 

@@ -43,6 +43,7 @@ New-Item -ItemType Directory -Path $tempDir | Out-Null
 try {
     $checksumPath = Join-Path $tempDir "SHA256SUMS.txt"
     $archivePath = Join-Path $tempDir $assetName
+    Write-Warning "The Windows standalone bundle is currently alpha and has CI smoke coverage only."
     Write-Host "Downloading $assetName from $baseUrl"
     Invoke-WebRequest -Uri "$baseUrl/SHA256SUMS.txt" -OutFile $checksumPath
     Invoke-WebRequest -Uri "$baseUrl/$assetName" -OutFile $archivePath
