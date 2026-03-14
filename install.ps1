@@ -8,6 +8,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Repo = "ssheeriin/super-kb"
+$StateDir = Join-Path $env:LOCALAPPDATA "skb-mcp-server"
+$ManifestPath = Join-Path $StateDir "install-manifest.json"
 
 function Get-ReleaseBaseUrl {
     param([string]$RequestedVersion)
@@ -33,6 +35,26 @@ function Add-UserPathEntry {
     $updated = @($entries + $Entry) -join ";"
     [Environment]::SetEnvironmentVariable("Path", $updated, "User")
     return $true
+}
+
+function Write-InstallManifest {
+    param(
+        [string]$InstallRootValue,
+        [string]$CurrentDirValue,
+        [string]$ExePathValue,
+        [bool]$PathUpdatedValue,
+        [bool]$ClaudeRegisteredValue
+    )
+    New-Item -ItemType Directory -Path $StateDir -Force | Out-Null
+    [ordered]@{
+        InstallRoot = $InstallRootValue
+        CurrentDir = $CurrentDirValue
+        ExecutablePath = $ExePathValue
+        PathEntry = $CurrentDirValue
+        PathUpdated = $PathUpdatedValue
+        ClaudeServerName = "skb"
+        ClaudeRegistered = $ClaudeRegisteredValue
+    } | ConvertTo-Json | Set-Content -Encoding UTF8 -Path $ManifestPath
 }
 
 $assetName = "skb-mcp-server-windows-x64.zip"
@@ -75,6 +97,7 @@ try {
     Move-Item -Path $bundleDir -Destination $currentDir
 
     $pathUpdated = Add-UserPathEntry -Entry $currentDir
+    $claudeRegistered = $false
     Write-Host "Installed SKB to $currentDir"
     if ($pathUpdated) {
         Write-Host "Added $currentDir to the user PATH. Open a new shell to pick it up."
@@ -89,6 +112,7 @@ try {
                 Write-Host "Claude MCP server 'skb' is already configured."
             } else {
                 & claude mcp add skb --scope user -- $exePath
+                $claudeRegistered = $true
             }
         } else {
             Write-Warning "Claude Code CLI not found on PATH; skipping registration."
@@ -103,6 +127,13 @@ try {
         & $exePath write-mcp-config --project-root $ProjectRoot
     }
 
+    Write-InstallManifest `
+        -InstallRootValue $InstallRoot `
+        -CurrentDirValue $currentDir `
+        -ExePathValue $exePath `
+        -PathUpdatedValue $pathUpdated `
+        -ClaudeRegisteredValue $claudeRegistered
+
     Write-Host ""
     Write-Host "Next steps:"
     Write-Host "  1. Open a new PowerShell window if PATH was updated."
@@ -112,6 +143,7 @@ try {
     }
     Write-Host "  4. For a shared repo, write a project .mcp.json: skb-mcp-server write-mcp-config --project-root C:\\path\\to\\project"
     Write-Host "  5. In a project, ask Claude to run: Provision SKB in this project"
+    Write-Host "  6. Uninstall later with: irm https://raw.githubusercontent.com/$Repo/main/uninstall.ps1 | iex"
 }
 finally {
     if (Test-Path $tempDir) {

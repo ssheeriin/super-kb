@@ -16,6 +16,7 @@ from .mcp_config import (
     DEFAULT_COMMAND,
     DEFAULT_SERVER_NAME,
     inspect_project_mcp_config,
+    remove_project_mcp_config,
     write_project_mcp_config,
 )
 from .reranker import warm_up as warm_up_reranker
@@ -96,6 +97,28 @@ def build_parser() -> argparse.ArgumentParser:
     mcp_parser.add_argument("--json", action="store_true", help="Render result as JSON.")
     mcp_parser.set_defaults(handler=_handle_write_mcp_config)
 
+    remove_mcp_parser = subparsers.add_parser(
+        "remove-mcp-config",
+        help="Remove the SKB server entry from a project-scoped .mcp.json.",
+    )
+    remove_mcp_parser.add_argument(
+        "--project-root",
+        default=".",
+        help="Project root where .mcp.json should be updated (default: current directory).",
+    )
+    remove_mcp_parser.add_argument(
+        "--server-name",
+        default=DEFAULT_SERVER_NAME,
+        help=f"Claude MCP server name to remove (default: {DEFAULT_SERVER_NAME}).",
+    )
+    remove_mcp_parser.add_argument(
+        "--keep-empty-file",
+        action="store_true",
+        help="Keep an empty .mcp.json instead of deleting it when the SKB entry was the only content.",
+    )
+    remove_mcp_parser.add_argument("--json", action="store_true", help="Render result as JSON.")
+    remove_mcp_parser.set_defaults(handler=_handle_remove_mcp_config)
+
     return parser
 
 
@@ -103,6 +126,10 @@ def main(argv: list[str] | None = None) -> int:
     """Run the SKB CLI."""
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
+        parser = build_parser()
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            parser.print_help()
+            return 0
         return _handle_serve(argparse.Namespace())
 
     parser = build_parser()
@@ -170,6 +197,17 @@ def _handle_write_mcp_config(args: argparse.Namespace) -> int:
     )
     exit_code = 0 if payload["status"] in {"created", "updated", "unchanged"} else 1
     _emit_result(payload, as_json=args.json, formatter=_format_write_mcp_config_report)
+    return exit_code
+
+
+def _handle_remove_mcp_config(args: argparse.Namespace) -> int:
+    payload = remove_project_mcp_config(
+        project_root=args.project_root,
+        server_name=args.server_name,
+        delete_file_when_empty=not args.keep_empty_file,
+    )
+    exit_code = 0 if payload["status"] in {"removed", "deleted", "unchanged", "absent"} else 1
+    _emit_result(payload, as_json=args.json, formatter=_format_remove_mcp_config_report)
     return exit_code
 
 
@@ -346,3 +384,16 @@ def _format_write_mcp_config_report(payload: dict) -> str:
         f"{payload['status'].capitalize()} {payload['path']} for server "
         f"{payload['server_name']} -> {payload['command']}"
     )
+
+
+def _format_remove_mcp_config_report(payload: dict) -> str:
+    """Render `remove-mcp-config` output as human-readable text."""
+    if payload["status"] == "error":
+        return f"Failed to update {payload['path']}: {payload['error']}"
+    if payload["status"] == "removed":
+        return f"Removed server {payload['server_name']} from {payload['path']}"
+    if payload["status"] == "deleted":
+        return f"Removed server {payload['server_name']} and deleted empty file {payload['path']}"
+    if payload["status"] == "absent":
+        return f"No .mcp.json found at {payload['path']}"
+    return f"No changes needed in {payload['path']} for server {payload['server_name']}"

@@ -100,6 +100,45 @@ curl -fsSL https://raw.githubusercontent.com/ssheeriin/super-kb/main/install.sh 
 irm https://raw.githubusercontent.com/ssheeriin/super-kb/main/install.ps1 | iex -RegisterClaude -BootstrapModel
 ```
 
+### Uninstall
+
+Uninstall removes the machine-level SKB install and the user-scoped Claude MCP
+registration if the installer created it. By default it does not remove:
+
+- `~/.skb/` model and index cache
+- project `.skb/` folders
+- project `.mcp.json`
+- project `.claude/` files
+
+macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.ps1 | iex
+```
+
+Useful uninstall options:
+
+- `--remove-cache`
+  Remove `~/.skb/` as well
+- `--remove-project-mcp <path>`
+  Remove the SKB entry from a project's `.mcp.json`
+
+Examples:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.sh | bash -s -- --remove-cache --remove-project-mcp /path/to/project
+```
+
+```powershell
+irm https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.ps1 | iex -RemoveCache -RemoveProjectMcp C:\path\to\project
+```
+
 ### Verify the Install
 
 Verify that the SKB executable is available:
@@ -369,6 +408,7 @@ setup.
 | `skb-mcp-server doctor` | Inspect install state, Claude config, and optional project `.mcp.json` |
 | `skb-mcp-server bootstrap-model` | Pre-download and warm the embedding model |
 | `skb-mcp-server write-mcp-config` | Generate a project-scoped `.mcp.json` |
+| `skb-mcp-server remove-mcp-config` | Remove the SKB entry from a project-scoped `.mcp.json` |
 
 ## Project Layout
 

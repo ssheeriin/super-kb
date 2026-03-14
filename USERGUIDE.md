@@ -68,6 +68,29 @@ Optional installer flags:
 - `--bootstrap-model` / `-BootstrapModel`
 - `--write-project-mcp <path>` / `-ProjectRoot <path>`
 
+To uninstall later:
+
+macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/ssheeriin/super-kb/main/uninstall.ps1 | iex
+```
+
+Uninstall removes the machine-level install and the user-scoped Claude MCP
+registration created by the installer. It leaves project `.skb/`, `.claude/`,
+and `CLAUDE.md` files alone unless you explicitly remove those yourself.
+
+Optional uninstall flags:
+
+- `--remove-cache` / `-RemoveCache`
+- `--remove-project-mcp <path>` / `-RemoveProjectMcp <path>`
+
 Alternative developer path from a source checkout:
 
 ```bash
@@ -151,6 +174,13 @@ If you want to avoid model download during the first sync, run:
 
 ```bash
 skb-mcp-server bootstrap-model
+```
+
+If you want to remove a project-scoped `.mcp.json` entry without uninstalling
+the local binary, run:
+
+```bash
+skb-mcp-server remove-mcp-config --project-root /path/to/project
 ```
 
 ---

@@ -170,6 +170,8 @@ jobs:
         run: |
           cp install.sh release-assets/install.sh
           cp install.ps1 release-assets/install.ps1
+          cp uninstall.sh release-assets/uninstall.sh
+          cp uninstall.ps1 release-assets/uninstall.ps1
 
       - name: Generate SHA256 checksums
         run: |

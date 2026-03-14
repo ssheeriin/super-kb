@@ -141,3 +141,77 @@ def write_project_mcp_config(
         "command": command,
         "args": desired_entry["args"],
     }
+
+
+def remove_project_mcp_config(
+    project_root: str | Path,
+    server_name: str = DEFAULT_SERVER_NAME,
+    delete_file_when_empty: bool = True,
+) -> dict:
+    """Remove an SKB server entry from a project's .mcp.json."""
+    project_root = Path(project_root).expanduser().resolve()
+    mcp_path = project_root / ".mcp.json"
+
+    if not mcp_path.exists():
+        return {
+            "path": str(mcp_path),
+            "status": "absent",
+            "server_name": server_name,
+        }
+
+    try:
+        payload = json.loads(mcp_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {
+            "path": str(mcp_path),
+            "status": "error",
+            "error": f"Invalid JSON in existing .mcp.json: {exc}",
+        }
+
+    if not isinstance(payload, dict):
+        return {
+            "path": str(mcp_path),
+            "status": "error",
+            "error": "Existing .mcp.json must contain a JSON object.",
+        }
+
+    mcp_servers = payload.get("mcpServers")
+    if mcp_servers is None:
+        return {
+            "path": str(mcp_path),
+            "status": "unchanged",
+            "server_name": server_name,
+        }
+    if not isinstance(mcp_servers, dict):
+        return {
+            "path": str(mcp_path),
+            "status": "error",
+            "error": "Existing .mcp.json has a non-object `mcpServers` field.",
+        }
+    if server_name not in mcp_servers:
+        return {
+            "path": str(mcp_path),
+            "status": "unchanged",
+            "server_name": server_name,
+        }
+
+    removed_entry = mcp_servers.pop(server_name)
+    if not mcp_servers:
+        payload.pop("mcpServers", None)
+
+    if not payload and delete_file_when_empty:
+        mcp_path.unlink()
+        return {
+            "path": str(mcp_path),
+            "status": "deleted",
+            "server_name": server_name,
+            "removed_entry": removed_entry,
+        }
+
+    mcp_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return {
+        "path": str(mcp_path),
+        "status": "removed",
+        "server_name": server_name,
+        "removed_entry": removed_entry,
+    }

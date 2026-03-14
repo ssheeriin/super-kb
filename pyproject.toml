@@ -82,4 +82,6 @@ include = [
     "SUPPORT.md",
     "install.sh",
     "install.ps1",
+    "uninstall.sh",
+    "uninstall.ps1",
 ]
