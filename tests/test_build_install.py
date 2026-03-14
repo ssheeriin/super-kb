@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 import subprocess
 import sys
@@ -37,17 +38,18 @@ def test_built_wheel_installs_and_provisions_project(tmp_path: Path) -> None:
 
     assert console_script.exists()
 
-    import_check = subprocess.run(
+    version_check = subprocess.run(
         [
-            str(python_executable),
-            "-c",
-            "from skb.server import main; print(callable(main))",
+            str(console_script),
+            "version",
+            "--json",
         ],
         check=True,
         capture_output=True,
         text=True,
     )
-    assert import_check.stdout.strip() == "True"
+    version_payload = json.loads(version_check.stdout)
+    assert version_payload["version"] != "0+unknown"
 
     project_dir = tmp_path / "installed-project"
     project_dir.mkdir()
@@ -72,6 +74,28 @@ def test_built_wheel_installs_and_provisions_project(tmp_path: Path) -> None:
     assert (project_dir / ".claude" / "CLAUDE-skb.md").is_file()
     assert (project_dir / ".claude" / "skills" / "skb" / "SKILL.md").is_file()
     assert (project_dir / "CLAUDE.md").is_file()
+    assert "## Super Knowledge Base (.skb/)" in (project_dir / ".claude" / "CLAUDE-skb.md").read_text(
+        encoding="utf-8"
+    )
+
+    subprocess.run(
+        [str(console_script), "write-mcp-config", "--project-root", str(project_dir)],
+        check=True,
+    )
+
+    mcp_path = project_dir / ".mcp.json"
+    assert mcp_path.is_file()
+    mcp_payload = json.loads(mcp_path.read_text(encoding="utf-8"))
+    assert mcp_payload["mcpServers"]["skb"]["command"] == "skb-mcp-server"
+
+    doctor_check = subprocess.run(
+        [str(console_script), "doctor", "--project-root", str(project_dir), "--json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    doctor_payload = json.loads(doctor_check.stdout)
+    assert doctor_payload["project_mcp"]["has_server"] is True
     assert "## Super Knowledge Base (.skb/)" in (project_dir / ".claude" / "CLAUDE-skb.md").read_text(
         encoding="utf-8"
     )

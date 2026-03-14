@@ -32,17 +32,40 @@ Everything runs locally. No external APIs, no cloud services. Documents are embe
 
 | Requirement | Version | Notes |
 |-------------|---------|-------|
-| **Python** | 3.12 or 3.13 | ChromaDB does not yet support 3.14 |
-| **uv** | Latest | [Install uv](https://docs.astral.sh/uv/) — the fast Python package manager |
 | **Claude Code** | Latest | The Claude Code CLI (`claude`) |
+| **macOS/Linux/Windows** | Current | Needed for the standalone installer scripts |
+| **Python** | 3.12 or 3.13 | Only required for wheel or source-checkout installs |
+| **uv** | Latest | Only required for the source-checkout workflow |
 
-> **Note:** You do NOT need to run `pip install` or `uv pip install`. Dependencies are installed automatically on first run via `uv run`.
+> **Note:** The recommended installer-script flow does not require `uv` or a separately managed Python runtime.
 
 ---
 
 ## Installation & Configuration
 
-### Step 1: Clone the Repository
+### Step 1: Install SKB
+
+Recommended for most users:
+
+macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ssheeriin/super-kb/main/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/ssheeriin/super-kb/main/install.ps1 | iex
+```
+
+Optional installer flags:
+
+- `--register-claude` / `-RegisterClaude`
+- `--bootstrap-model` / `-BootstrapModel`
+- `--write-project-mcp <path>` / `-ProjectRoot <path>`
+
+Alternative developer path from a source checkout:
 
 ```bash
 git clone https://github.com/ssheeriin/super-kb.git
@@ -52,17 +75,29 @@ git clone https://github.com/ssheeriin/super-kb.git
 
 Register the server using Claude Code's MCP CLI:
 
+If you installed a release binary:
+
+```bash
+claude mcp add skb --scope user -- skb-mcp-server
+```
+
+If you are running from a source checkout:
+
 ```bash
 claude mcp add skb --scope user -- uv --directory /path/to/super-kb run python -m skb
 ```
 
-Replace `/path/to/super-kb` with the actual path where you cloned the repository (e.g., `/Users/yourname/dev/super-kb`).
 Use `--scope user` so SKB is available in every project on your machine.
 
-If you installed SKB from a GitHub release artifact, register the installed executable instead:
+For shared repositories, you can instead check in a project-scoped `.mcp.json`.
+That file is optional, but it is useful for team-owned repos because the repo
+declares its SKB dependency directly and developers do not need a repo-specific
+Claude setup command.
+
+Generate it with:
 
 ```bash
-claude mcp add skb --scope user -- skb-mcp-server
+skb-mcp-server write-mcp-config --project-root /path/to/project
 ```
 
 Verify the registration:
@@ -106,6 +141,14 @@ This gives you `/skb search`, `/skb sync`, `/skb reindex`, `/skb export`, `/skb 
 ### Step 5: Start or Restart Claude Code
 
 Start or restart Claude Code so it picks up the new MCP server and any new skill files.
+
+### Optional: Pre-download the Local Model
+
+If you want to avoid model download during the first sync, run:
+
+```bash
+skb-mcp-server bootstrap-model
+```
 
 ---
 

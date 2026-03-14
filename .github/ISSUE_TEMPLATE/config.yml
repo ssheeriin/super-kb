@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Usage and setup help
+    url: https://github.com/ssheeriin/super-kb/blob/main/SUPPORT.md
+    about: Start with the support guide before opening a general question.
+  - name: Security policy
+    url: https://github.com/ssheeriin/super-kb/blob/main/SECURITY.md
+    about: Please report vulnerabilities privately.

@@ -4,6 +4,30 @@ version = "0.2.2"
 description = "Super Knowledge Base MCP server for Claude Code"
 requires-python = ">=3.12,<3.14"
 readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "ssheeriin" },
+]
+keywords = [
+    "claude-code",
+    "knowledge-base",
+    "mcp",
+    "rag",
+    "vector-search",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "mcp[cli]>=1.26",
     "chromadb>=1.0",
@@ -11,8 +35,24 @@ dependencies = [
     "flashrank>=0.2.10",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ssheeriin/super-kb"
+Repository = "https://github.com/ssheeriin/super-kb"
+Issues = "https://github.com/ssheeriin/super-kb/issues"
+Changelog = "https://github.com/ssheeriin/super-kb/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/ssheeriin/super-kb/blob/main/USERGUIDE.md"
+
+[project.optional-dependencies]
+build = [
+    "build>=1.2",
+    "pyinstaller>=6.11",
+]
+test = [
+    "pytest>=8.0",
+]
+
 [project.scripts]
-skb-mcp-server = "skb.server:main"
+skb-mcp-server = "skb.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -27,8 +67,18 @@ include = [
 [tool.hatch.build.targets.sdist]
 include = [
     "skb/**",
+    "scripts/**",
+    "packaging/**",
     "sample/**",
     "tests/**",
     "README.md",
     "USERGUIDE.md",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "install.sh",
+    "install.ps1",
 ]

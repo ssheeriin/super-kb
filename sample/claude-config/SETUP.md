@@ -3,6 +3,11 @@
 This folder contains the Claude Code configuration files that make SKB work
 seamlessly. Copy them to your `~/.claude/` directory.
 
+This sample is mainly for a source-checkout workflow. If you installed a
+released standalone binary with `install.sh` or `install.ps1`, prefer
+registering `skb-mcp-server` directly or committing a project-scoped
+`.mcp.json`.
+
 ## Files
 
 ```
@@ -38,7 +43,7 @@ cp sample/claude-config/skills/skb/SKILL.md ~/.claude/skills/skb/SKILL.md
 
 ### 3. MCP server registration
 
-Register SKB with Claude Code using the MCP CLI:
+If you are running SKB from a source checkout, register it with Claude Code:
 
 ```bash
 claude mcp add skb --scope user -- uv --directory /path/to/super-kb run python -m skb
@@ -46,6 +51,18 @@ claude mcp add skb --scope user -- uv --directory /path/to/super-kb run python -
 
 Replace `/path/to/super-kb` with the actual path where you cloned this repo.
 Use `--scope user` so the server is available in every project on your machine.
+
+If you installed a release binary instead, use:
+
+```bash
+claude mcp add skb --scope user -- skb-mcp-server
+```
+
+For shared repositories, you can also create a project-scoped `.mcp.json`:
+
+```bash
+skb-mcp-server write-mcp-config --project-root /path/to/project
+```
 
 Verify the registration:
 

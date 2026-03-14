@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "skb": {
+      "command": "skb-mcp-server",
+      "args": []
+    }
+  }
+}
