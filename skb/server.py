@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import Context, FastMCP
 
-from . import reranker, store
 from .tools import (
     tool_export_index,
     tool_export_skb,
@@ -26,9 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 
 @asynccontextmanager
 async def lifespan(server: FastMCP):
-    """Warm up the ChromaDB embedding model at server startup."""
-    store.warm_up()
-    reranker.warm_up()
+    """Keep MCP startup fast; heavy models are loaded lazily on demand."""
     yield
 
 

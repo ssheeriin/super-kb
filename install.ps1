@@ -88,7 +88,7 @@ try {
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "Claude MCP server 'skb' is already configured."
             } else {
-                & claude mcp add skb --scope user -- skb-mcp-server
+                & claude mcp add skb --scope user -- $exePath
             }
         } else {
             Write-Warning "Claude Code CLI not found on PATH; skipping registration."

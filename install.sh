@@ -183,7 +183,7 @@ if [ "$REGISTER_CLAUDE" -eq 1 ]; then
     if claude mcp get skb >/dev/null 2>&1; then
       echo "Claude MCP server 'skb' is already configured."
     else
-      claude mcp add skb --scope user -- skb-mcp-server
+      claude mcp add skb --scope user -- "$current_dir/skb-mcp-server"
     fi
   else
     echo "Claude Code CLI not found on PATH; skipping registration." >&2

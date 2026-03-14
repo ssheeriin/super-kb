@@ -7,6 +7,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-03-14
+
+### Changed
+- Made MCP server startup lazy so first-time Claude registration does not block on model download or warm-up.
+- Updated installer-driven Claude registration to use the absolute installed executable path.
+
 ## [0.2.5] - 2026-03-14
 
 ### Changed
