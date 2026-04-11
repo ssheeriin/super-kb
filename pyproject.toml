@@ -32,7 +32,7 @@ dependencies = [
     "certifi>=2024.0",
     "mcp[cli]>=1.26",
     "chromadb>=1.0",
-    "pypdf>=5.0",
+    "pypdf>=6.10.0",
     "flashrank>=0.2.10",
 ]
 
