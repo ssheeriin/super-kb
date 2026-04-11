@@ -31,7 +31,7 @@ classifiers = [
 dependencies = [
     "certifi>=2024.0",
     "mcp[cli]>=1.26",
-    "chromadb>=1.0",
+    "chromadb>=1.5.7",
     "pypdf>=5.0",
     "flashrank>=0.2.10",
 ]
