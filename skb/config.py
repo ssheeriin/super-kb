@@ -44,6 +44,18 @@ LANGUAGE_MAP: dict[str, str] = {
 MAX_PDF_PAGES = 200
 MAX_CONTENT_CHARS = 500_000
 
+# Maximum rows per ChromaDB write (upsert) statement.
+#
+# ChromaDB binds ~6 SQL variables per record and derives its own batch cap from
+# the SQLite ``MAX_VARIABLE_NUMBER`` compile option. That option is read from the
+# interpreter's SQLite build, but the persistent writes execute through
+# ChromaDB's bundled/Rust SQLite, which may enforce the historical 999-variable
+# limit (≈166 records). A single large file can produce far more chunks than
+# that in one upsert, passing ChromaDB's guard yet failing deep in the executor
+# with "too many SQL variables". We therefore batch writes ourselves at a size
+# that stays under the 999-variable limit regardless of the runtime's SQLite.
+SAFE_WRITE_BATCH: int = max(1, int(os.environ.get("SKB_WRITE_BATCH", "128")))
+
 # ── Chunking parameters ──────────────────────────────────────────────────
 CHUNK_SIZES: dict[str, int] = {
     "markdown": 1000,

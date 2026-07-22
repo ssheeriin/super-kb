@@ -150,6 +150,41 @@ def test_sync_detects_updates_and_deletions(tmp_path: Path, isolated_vector_stor
     assert search["results"][0]["source_file"] == ".skb/release.md"
 
 
+def test_add_documents_batches_writes_under_sql_variable_limit(
+    isolated_vector_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A single large file must be written in batches no larger than SAFE_WRITE_BATCH.
+
+    Regression for "too many SQL variables": ChromaDB's bundled SQLite can cap
+    bound variables at 999 (~166 records), so an unbatched upsert of a big file's
+    chunks fails deep in the executor. add_documents must never exceed the cap.
+    """
+    monkeypatch.setattr(store, "SAFE_WRITE_BATCH", 50)
+
+    collection = store.get_or_create_collection("batch-project")
+    observed_batch_sizes: list[int] = []
+    real_upsert = collection.upsert
+
+    def spy_upsert(**kwargs):
+        observed_batch_sizes.append(len(kwargs["ids"]))
+        return real_upsert(**kwargs)
+
+    monkeypatch.setattr(collection, "upsert", spy_upsert)
+    # Pin the spied collection so add_documents writes through it.
+    monkeypatch.setattr(store, "get_or_create_collection", lambda _project: collection)
+
+    total = 123
+    ids = [f"chunk-{i}" for i in range(total)]
+    documents = [f"content number {i}" for i in range(total)]
+    metadatas = [{"source": ".skb/big.md", "doc_type": "markdown", "chunk_index": i} for i in range(total)]
+
+    store.add_documents("batch-project", ids, documents, metadatas)
+
+    assert observed_batch_sizes == [50, 50, 23]
+    assert max(observed_batch_sizes) <= 50
+    assert collection.count() == total
+
+
 def _write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")

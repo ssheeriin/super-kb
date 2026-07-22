@@ -5,7 +5,7 @@ import logging
 import chromadb
 from chromadb.config import Settings
 
-from .config import CHROMADB_DIR, RERANK_ENABLED, RERANK_RETRIEVAL_MULTIPLIER
+from .config import CHROMADB_DIR, RERANK_ENABLED, RERANK_RETRIEVAL_MULTIPLIER, SAFE_WRITE_BATCH
 from .embeddings import get_embedding_function
 from .reranker import rerank as rerank_results
 
@@ -48,9 +48,19 @@ def add_documents(
     documents: list[str],
     metadatas: list[dict],
 ) -> None:
-    """Upsert documents into a project's collection."""
+    """Upsert documents into a project's collection.
+
+    Writes are chunked at ``SAFE_WRITE_BATCH`` rows per statement to stay below
+    ChromaDB's underlying SQLite variable limit (see config.SAFE_WRITE_BATCH).
+    """
     collection = get_or_create_collection(project)
-    collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+    for start in range(0, len(ids), SAFE_WRITE_BATCH):
+        end = start + SAFE_WRITE_BATCH
+        collection.upsert(
+            ids=ids[start:end],
+            documents=documents[start:end],
+            metadatas=metadatas[start:end],
+        )
 
 
 def query_collection(
@@ -248,14 +258,20 @@ def add_documents_with_embeddings(
     metadatas: list[dict],
     embeddings: list[list[float]],
 ) -> None:
-    """Upsert documents with pre-computed embeddings (bypasses embedding function)."""
+    """Upsert documents with pre-computed embeddings (bypasses embedding function).
+
+    Writes are chunked at ``SAFE_WRITE_BATCH`` rows per statement to stay below
+    ChromaDB's underlying SQLite variable limit (see config.SAFE_WRITE_BATCH).
+    """
     collection = get_or_create_collection(project)
-    collection.upsert(
-        ids=ids,
-        documents=documents,
-        metadatas=metadatas,
-        embeddings=embeddings,
-    )
+    for start in range(0, len(ids), SAFE_WRITE_BATCH):
+        end = start + SAFE_WRITE_BATCH
+        collection.upsert(
+            ids=ids[start:end],
+            documents=documents[start:end],
+            metadatas=metadatas[start:end],
+            embeddings=embeddings[start:end],
+        )
 
 
 def warm_up() -> None:

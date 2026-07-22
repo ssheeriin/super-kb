@@ -7,6 +7,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-22
+
+### Fixed
+- Sync no longer fails with `too many SQL variables` when a single file produces many chunks. Vector-store writes are now batched below ChromaDB's underlying SQLite bound-variable limit, which the runtime's frozen/Rust SQLite can enforce at 999 (~166 records per statement) even though ChromaDB's own guard reports a higher cap. The batch size defaults to 128 rows and is overridable via `SKB_WRITE_BATCH`.
+
 ## [0.2.9] - 2026-03-13
 
 ### Added
