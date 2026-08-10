@@ -45,7 +45,7 @@ Documentation = "https://github.com/ssheeriin/super-kb/blob/main/USERGUIDE.md"
 
 [project.optional-dependencies]
 build = [
-    "build>=1.2",
+    "build>=1.4.3",
     "pyinstaller>=6.11",
 ]
 test = [
