@@ -29,7 +29,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "certifi>=2024.0",
+    "certifi>=2026.2.25",
     "mcp[cli]>=1.26",
     "chromadb>=1.0",
     "pypdf>=5.0",
